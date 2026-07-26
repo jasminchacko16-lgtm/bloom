@@ -1,0 +1,17 @@
+{
+  "name": "Bloom — everyday progress, together",
+  "short_name": "Bloom",
+  "description": "A calm, parent-led space for noticing and celebrating everyday progress.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#FDFBF8",
+  "theme_color": "#6B1224",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

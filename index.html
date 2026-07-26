@@ -1,0 +1,2524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#6B1224">
+<meta name="description" content="A calm, parent-led space for noticing and celebrating everyday progress.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Bloom — everyday progress, together</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Quicksand:wght@500;600;700&family=Comfortaa:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1E1A1A;
+    --ink-soft:#7A6F6F;
+    --page:#FDFBF8;
+    --app-bg:#FDFBF8;
+    --card:#FFFFFF;
+    --brand:#6B1224;
+    --brand-deep:#3D0A16;
+    --brand-mid:#8B1A2F;
+    --brand-light:#C4556A;
+    --brand-pale:#E8A0AD;
+    --tint:#EDD8D5;
+    --tint-soft:#F5EAE8;
+    --line:#EDD8D5;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--page);
+    font-family:'Nunito', sans-serif;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    padding:32px 16px;
+    min-height:100vh;
+  }
+  .stage{display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap; justify-content:center;}
+  .caption{max-width:230px; font-size:13px; color:var(--ink-soft); line-height:1.6; padding-top:40px;}
+  .caption b{color:var(--ink); font-weight:600;}
+  .phone{
+    width:375px; height:800px;
+    background:#FDFBF8;
+    border-radius:36px;
+    border:1px solid #00000012;
+    box-shadow:0 30px 60px -20px rgba(61,10,22,0.28);
+    overflow:hidden;
+    display:flex; flex-direction:column;
+    position:relative;
+  }
+  #ambient{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0;}
+  .notch, header.app-head, .screens, nav.tabbar{position:relative; z-index:1;}
+  #burstLayer{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:2;}
+  .bloom-hero svg{animation:sway 5s ease-in-out infinite;}
+  @keyframes sway{0%,100%{transform:rotate(-2.5deg);} 50%{transform:rotate(2.5deg);}}
+  #homeBloom{transform-origin:center 62%; animation:bloomBreathe 6s ease-in-out infinite;}
+  @keyframes bloomBreathe{
+    0%,100%{transform:rotate(-2deg) scale(1);}
+    50%{transform:rotate(2deg) scale(1.04);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    #homeBloom{animation:none;}
+    .bloom-hero svg{animation:none;}
+  }
+  .notch{height:26px; display:flex; align-items:center; justify-content:center; background:transparent; flex-shrink:0;}
+  .notch::after{content:""; width:90px; height:6px; border-radius:4px; background:#00000014;}
+  header.app-head{padding:4px 22px 12px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between;}
+  .child-chip{display:flex; align-items:center; gap:5px; background:var(--tint-soft); border:1px solid var(--line); border-radius:20px; padding:5px 12px; font-family:'Nunito',sans-serif; font-size:12.5px; font-weight:700; color:var(--brand-deep); cursor:pointer;}
+  .child-chip-caret{font-size:11px; color:var(--ink-soft);}
+  .child-menu{display:none; position:absolute; top:56px; right:22px; z-index:20; background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:0 10px 30px rgba(61,10,22,0.16); padding:6px; min-width:170px;}
+  .child-menu.open{display:block;}
+  .child-menu-item{display:flex; align-items:center; gap:9px; padding:10px 12px; border-radius:10px; font-family:'Nunito',sans-serif; font-size:13.5px; font-weight:600; color:var(--brand-deep); cursor:pointer;}
+  .child-menu-item:hover{background:var(--tint-soft);}
+  .child-menu-item.on{background:var(--tint-soft);}
+  .child-menu-item .dot{width:8px; height:8px; border-radius:50%; background:var(--brand-light); flex-shrink:0;}
+  .child-menu-item.on .dot{background:var(--brand);}
+  .child-menu-add{border-top:1px solid var(--line-soft, #F0E6E3); margin-top:4px; color:var(--brand); font-weight:700;}
+
+  /* in-app modal sheet */
+  .sheet-overlay{position:fixed; inset:0; background:rgba(61,10,22,0.32); z-index:100; display:none; align-items:flex-end; justify-content:center;}
+  .sheet-overlay.open{display:flex;}
+  .sheet{background:var(--app-bg); width:100%; max-width:440px; border-radius:24px 24px 0 0; padding:10px 22px 28px; max-height:88vh; overflow-y:auto; animation:sheetUp 0.28s cubic-bezier(0.16,1,0.3,1);}
+  @keyframes sheetUp{from{transform:translateY(100%);} to{transform:translateY(0);}}
+  .sheet-handle{width:40px; height:4px; border-radius:2px; background:var(--line); margin:6px auto 16px;}
+  .sheet-title{font-family:'Quicksand',sans-serif; font-weight:600; font-size:19px; color:var(--brand-deep); margin-bottom:4px;}
+  .sheet-sub{font-family:'Nunito',sans-serif; font-size:13px; color:var(--ink-soft); margin-bottom:18px; line-height:1.5;}
+  .sheet-field{margin-bottom:16px;}
+  .sheet-label{font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; color:var(--brand-deep); display:block; margin-bottom:6px;}
+  .sheet-hint{font-family:'Nunito',sans-serif; font-size:11.5px; color:var(--ink-soft); margin-top:5px;}
+  .sheet-input{width:100%; box-sizing:border-box; font-family:'Nunito',sans-serif; font-size:15px; color:var(--ink); background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:13px 14px;}
+  .sheet-input:focus{outline:none; border-color:var(--brand-light);}
+  .emoji-pick{display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;}
+  .emoji-opt{width:44px; height:44px; border-radius:12px; border:1.5px solid var(--line); background:var(--card); font-size:22px; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .emoji-opt.on{border-color:var(--brand); background:var(--tint-soft);}
+  .size-pick{display:flex; gap:8px; flex-wrap:wrap;}
+  .size-opt{min-width:44px; height:44px; padding:0 6px; border-radius:12px; border:1.5px solid var(--line); background:var(--card); font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--brand-deep); cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .size-opt.on{border-color:var(--brand); background:var(--tint-soft); color:var(--brand);}
+  .time-pick{display:flex; gap:7px; flex-wrap:wrap;}
+  .time-opt{flex:1; min-width:64px; padding:10px 8px; border-radius:11px; border:1.5px solid var(--line); background:var(--card); font-family:'Nunito',sans-serif; font-size:12.5px; font-weight:700; color:var(--ink-soft); cursor:pointer;}
+  .time-opt.sel{border-color:var(--brand); background:var(--tint-soft); color:var(--brand);}
+  .sheet-actions{display:flex; gap:10px; margin-top:8px;}
+  .sheet-btn{flex:1; font-family:'Nunito',sans-serif; font-size:15px; font-weight:700; padding:14px; border-radius:13px; border:none; cursor:pointer;}
+  .sheet-btn.ghost{background:var(--tint-soft); color:var(--brand);}
+  .sheet-btn.primary{background:var(--brand); color:#fff;}
+  .sheet-btn.danger{background:#fff; color:var(--brand); border:1.5px solid var(--brand-light);}
+  .sheet-steps{display:flex; flex-direction:column; gap:8px; margin-bottom:6px;}
+  .sheet-step-row{display:flex; align-items:center; gap:9px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px 10px;}
+  .sheet-step-row .se{font-size:20px;}
+  .sheet-step-row .sl{flex:1; font-family:'Nunito',sans-serif; font-size:14px; color:var(--ink);}
+  .sheet-step-row .sx{background:none; border:none; color:var(--brand-light); font-size:18px; cursor:pointer;}
+  .wordmark{font-family:'Comfortaa', sans-serif; font-size:20px; font-weight:600; color:var(--brand-deep); display:flex; align-items:center; gap:8px;}
+  .subhead{font-size:12px; color:var(--ink-soft); margin-top:1px;}
+  .screens{flex:1; overflow-y:auto; padding:0 18px 12px;}
+  .screen{display:none;}
+  .screen.active{display:block;}
+  #screen-progress.active{display:block;}
+  #screen-progress .stat-row, #screen-progress .chart-wrap, #screen-progress .target-select{margin-top:0; margin-bottom:0;}
+  .day-label{font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); margin:12px 0 10px;}
+  .home-greeting{font-family:'Quicksand',sans-serif; font-weight:700; font-size:21px; color:var(--brand-deep); margin:14px 0 2px;}
+  .hs-date{font-family:'Nunito',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin:16px 0 3px;}
+  .hs-hello{font-family:'Quicksand',sans-serif; font-weight:700; font-size:24px; line-height:1.15; color:var(--brand-deep); margin-bottom:18px;}
+  .hs-hello #homeGreetSmall{font-weight:500;}
+  .home-sub{font-size:13px; color:var(--ink-soft); margin-bottom:16px;}
+  .home-hero{display:flex; flex-direction:column; align-items:center; padding:18px 0 14px; margin-bottom:16px;}
+  .home-hero-caption{font-family:'Nunito',sans-serif; font-weight:400; font-size:15px; color:var(--brand); text-align:center; margin-top:8px;}
+  .home-hero-sub{font-family:'Nunito',sans-serif; font-size:12px; color:var(--brand-mid); text-align:center; margin-top:2px;}
+  .home-stat-pill{display:flex; justify-content:space-around; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 18px; margin-bottom:22px;}
+  .hsp-item{text-align:center;}
+  .hsp-item .n{font-family:'Quicksand',sans-serif; font-weight:600; font-size:22px; color:var(--brand);}
+  .hsp-item .l{font-family:'Nunito',sans-serif; font-size:10.5px; color:var(--ink-soft); margin-top:1px;}
+  .hsp-div{width:1px; height:30px; background:var(--line);}
+  .home-section-label{font-size:12px; color:var(--ink-soft); margin:4px 0 9px;}
+  .home-tagline{font-family:'Quicksand',sans-serif; font-style:italic; font-size:14px; color:var(--brand); text-align:center; margin:30px 0 12px;}
+  .wins-summary{background:var(--card); border:1px solid var(--line); border-radius:15px; padding:15px; display:flex; gap:18px; align-items:center;}
+  .wins-summary .ws-num{text-align:center; flex-shrink:0;}
+  .wins-summary .ws-num .big{font-family:'Quicksand',sans-serif; font-weight:600; font-size:24px; color:var(--brand);}
+  .wins-summary .ws-num .lbl{font-family:'Nunito',sans-serif; font-size:10px; color:var(--ink-soft); margin-top:1px;}
+  .wins-summary .ws-div{width:1px; align-self:stretch; background:var(--line);}
+  .wins-summary .ws-detail{font-family:'Nunito',sans-serif; font-size:12.5px; color:var(--brand-deep); line-height:1.6;}
+  .wins-summary .ws-empty{font-family:'Nunito',sans-serif; font-size:12.5px; color:var(--ink-soft); line-height:1.5;}
+  .win-item{display:flex; gap:11px;}
+  .win-rail{display:flex; flex-direction:column; align-items:center;}
+  .win-dot{width:30px; height:30px; border-radius:50%; background:var(--tint-soft); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;}
+  .win-line{width:2px; flex:1; background:var(--line); margin:2px 0; min-height:8px;}
+  .win-body{padding-bottom:14px;}
+  .win-item:last-child .win-body{padding-bottom:0;}
+  .win-main{font-family:'Nunito',sans-serif; font-size:13.5px; font-weight:600; color:var(--brand-deep); line-height:1.3;}
+  .win-time{font-size:11.5px; color:var(--ink-soft); margin-top:1px;}
+  .win-empty{background:var(--tint-soft); border-radius:14px; padding:16px; text-align:center; font-size:13px; color:var(--brand-deep); line-height:1.5;}
+
+  /* LOG (as spaced cards) */
+  .target-list{background:none; border:none; border-radius:0; padding:0; margin-bottom:12px;}
+  .target-card{background:var(--card); border:1px solid var(--line); border-bottom:1px solid var(--line); border-radius:18px; padding:15px 16px; margin-bottom:11px; cursor:pointer; transition:transform .08s, box-shadow .15s; box-shadow:0 2px 10px rgba(107,18,36,0.03);}
+  .target-card:last-child{border-bottom:1px solid var(--line);}
+  .target-card:active{transform:scale(0.98); opacity:1;}
+  .target-card-main{display:flex; align-items:center; gap:14px;}
+  .target-info{flex:1; min-width:0;}
+  .target-name{font-size:15.5px; font-weight:800; color:var(--brand-deep);}
+  .target-meta{font-size:11px; color:var(--ink-soft); margin-top:2px;}
+  .wk-dots{display:flex; gap:4px; margin-top:7px;}
+  .wk-dot{width:6px; height:6px; border-radius:50%; background:var(--line);}
+  .wk-dot.on{background:var(--brand-light);}
+  .detail-link{display:inline-flex; align-items:center; gap:4px; margin-top:8px; padding:5px 8px; border:1px solid var(--brand-pale); border-radius:999px; background:var(--tint-soft); color:var(--brand); font-family:'Nunito',sans-serif; font-size:10.5px; font-weight:800; line-height:1; cursor:pointer;}
+  .detail-link:active{transform:scale(.96);}
+  .detail-link.is-complete{border-color:var(--line); background:var(--card); color:var(--brand-light);}
+  .inline-detail{margin-top:13px; padding-top:13px; border-top:1px solid var(--line); cursor:default; animation:detailReveal .2s ease-out;}
+  @keyframes detailReveal{from{opacity:0; transform:translateY(-4px)}to{opacity:1; transform:translateY(0)}}
+  .inline-detail-label{font-family:'Nunito',sans-serif; font-size:12px; font-weight:800; color:var(--brand-deep); margin-bottom:8px;}
+  .inline-detail-label span{font-weight:600; color:var(--ink-soft);}
+  .inline-detail .context-chip{min-height:34px; padding:6px 9px; font-size:11px;}
+  .inline-note{width:100%; box-sizing:border-box; min-height:52px; margin-top:10px; resize:vertical; font-family:'Nunito',sans-serif; font-size:12px; color:var(--ink); background:var(--app-bg); border:1px solid var(--line); border-radius:11px; padding:9px 10px;}
+  .inline-note:focus{outline:none; border-color:var(--brand-light);}
+  .inline-detail-actions{display:flex; justify-content:flex-end; align-items:center; gap:11px; margin-top:9px;}
+  .inline-skip{border:none; background:none; padding:7px 4px; font-family:'Nunito',sans-serif; font-size:11.5px; font-weight:700; color:var(--ink-soft); cursor:pointer;}
+  .inline-done{border:none; border-radius:10px; padding:8px 13px; background:var(--brand); color:#fff; font-family:'Nunito',sans-serif; font-size:11.5px; font-weight:800; cursor:pointer;}
+  .bloom-mini{width:42px; height:42px; flex-shrink:0;}
+  .target-count{font-family:'JetBrains Mono',monospace; font-size:18px; color:#fff; background:var(--brand); width:38px; height:38px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center;}
+  .target-count.zero{color:var(--brand-light); background:var(--tint-soft);}
+  .row-edit{background:none; border:none; color:var(--brand-light); font-size:18px; line-height:1; padding:4px 2px 4px 6px; cursor:pointer; flex-shrink:0;}
+  .target-minus{width:30px; height:30px; border-radius:9px; border:1.5px solid var(--line); background:var(--card); color:var(--brand-mid); font-size:19px; line-height:1; cursor:pointer; flex-shrink:0;}
+  .target-minus:active{background:var(--tint-soft);}
+  .log-hint{text-align:center; font-size:12px; color:var(--brand-light); font-style:italic; margin:2px 0 16px;}
+  .weekly-focus{position:relative; overflow:hidden; display:flex; align-items:center; gap:11px; margin:-2px 0 15px; padding:12px 13px; border:1px solid var(--brand-pale); border-radius:16px; background:linear-gradient(115deg,#F9EEEE,#FFF9F4);}
+  .weekly-focus[hidden]{display:none;}
+  .weekly-focus-mark{width:31px; height:31px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-radius:10px; background:var(--brand); color:#fff; font-size:15px;}
+  .weekly-focus-body{flex:1; min-width:0;}
+  .weekly-focus-kicker{font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--brand-light);}
+  .weekly-focus-plan{font-family:'Nunito',sans-serif; font-size:12px; font-weight:800; color:var(--brand-deep); line-height:1.3; margin-top:1px;}
+  .weekly-focus-note{font-size:10.5px; color:var(--ink-soft); line-height:1.3; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .weekly-focus-edit{border:0; background:none; color:var(--brand-light); font-family:'Nunito',sans-serif; font-size:11px; font-weight:800; cursor:pointer; padding:7px 2px 7px 5px;}
+  .sheet-select{width:100%; box-sizing:border-box; appearance:auto; font-family:'Nunito',sans-serif; font-size:14px; color:var(--ink); background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:12px 13px;}
+  .time-banner{display:flex; align-items:center; padding:4px 0 4px 12px; border-left:4px solid var(--brand-light); margin:2px 0 11px; font-family:'Nunito',sans-serif; font-size:14px; font-weight:800; color:var(--brand-deep);}
+  .time-banner .tg-dot{display:none;}
+  .later-divider{font-family:'Nunito',sans-serif; font-size:11px; font-weight:700; color:var(--ink-soft); margin:16px 2px 9px;}
+  .add-target{width:100%; padding:13px; border-radius:16px; border:1px dashed var(--brand-pale); background:none; color:var(--ink-soft); font-size:13px; font-family:'Nunito',sans-serif; cursor:pointer; margin-top:4px;}
+  .context-chip:focus-visible{outline:3px solid rgba(196,85,106,.28); outline-offset:2px;}
+  .context-chip-grid{display:flex; flex-wrap:wrap; gap:7px;}
+  .context-chip{min-height:36px; padding:7px 10px; border:1.5px solid var(--line); border-radius:999px; background:var(--card); color:var(--brand-deep); font-family:'Nunito',sans-serif; font-size:11.5px; font-weight:700; cursor:pointer;}
+  .context-chip[aria-pressed="true"]{border-color:var(--brand); background:var(--tint-soft); color:var(--brand);}
+
+  /* PROGRESS */
+  .prog-tabs{display:flex; gap:6px; margin:12px 0 12px;}
+  .range-toggle{display:flex; background:var(--tint-soft); border-radius:11px; padding:3px; margin:0 0 16px;}
+  .range-toggle button{flex:1; text-align:center; padding:8px 6px; border:none; border-radius:8px; background:none; font-family:'Nunito',sans-serif; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer;}
+  .range-toggle button.on{background:var(--brand); color:#fff; font-weight:700;}
+  .prog-tab{flex:1; text-align:center; font-family:'Nunito',sans-serif; font-size:12.5px; font-weight:600; padding:9px 8px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--ink-soft); cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .prog-tab.on{background:var(--brand); color:#fff; border-color:var(--brand); font-weight:700;}
+  .bloom-hero{display:flex; flex-direction:column; align-items:center; padding:18px 0 14px; border-radius:20px; background:linear-gradient(180deg, var(--tint-soft), var(--app-bg) 60%);}
+  .bloom-caption{font-family:'Nunito',sans-serif; font-weight:400; font-size:15px; color:var(--brand); text-align:center; margin-top:8px;}
+  .bloom-sub{font-family:'Nunito',sans-serif; font-size:12px; color:var(--brand-mid); text-align:center; margin-top:2px;}
+  .stat-row{display:flex; gap:9px; margin:16px 0;}
+  .stat-card{flex:1; background:var(--tint-soft); border:none; border-radius:13px; padding:13px 10px; text-align:center;}
+  .stat-num{font-family:'JetBrains Mono',monospace; font-size:21px; color:var(--brand-deep); font-weight:500;}
+  .stat-label{font-size:10.5px; color:var(--ink-soft); margin-top:2px;}
+  .chart-wrap{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 13px 11px; margin-bottom:14px;}
+  .chart-title{font-size:12px; color:var(--ink-soft); margin-bottom:9px;}
+  .note-box{background:var(--tint-soft); border-radius:14px; padding:11px 13px; font-size:12px; color:var(--brand-deep); line-height:1.5;}
+
+  /* TOKENS */
+  .board-card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:15px; margin-bottom:12px;}
+  .board-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+  .board-goal{font-size:15.5px; font-weight:800; color:var(--brand-deep); cursor:pointer;}
+  .board-reward{font-size:12px; color:var(--ink-soft); margin-top:1px;}
+  .board-count{font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--brand); background:var(--tint-soft); padding:4px 9px; border-radius:8px; flex-shrink:0;}
+  .board-head-info{flex:1; min-width:0;}
+  .token-grid{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:13px;}
+  .token{width:38px; height:38px; border-radius:50%; border:2px dashed var(--brand-pale); display:flex; align-items:center; justify-content:center; transition:all .25s ease; font-size:19px; line-height:1;}
+  .board-open-hint{text-align:center; font-size:11.5px; color:var(--brand-light); font-weight:600; margin-top:11px; cursor:pointer;}
+
+  /* segmented section control */
+  .seg{display:flex; background:var(--tint-soft); border-radius:12px; padding:3px; margin:2px 0 12px;}
+  .seg button{flex:1; text-align:center; padding:9px 6px; border:none; border-radius:9px; background:none; font-family:'Nunito',sans-serif; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer;}
+  .seg button.on{background:var(--brand); color:#fff; font-weight:700;}
+  .age-row{display:flex; justify-content:space-between; align-items:center; padding:0 2px; margin-bottom:14px;}
+  .age-row .age-lbl{font-family:'Nunito',sans-serif; font-size:12px; color:var(--ink-soft);}
+  .age-switch{display:flex; background:var(--card); border:1px solid var(--line); border-radius:9px; padding:2px;}
+  .age-switch button{padding:5px 12px; border:none; border-radius:7px; background:none; font-family:'Nunito',sans-serif; font-size:11.5px; font-weight:600; color:var(--ink-soft); cursor:pointer;}
+  .age-switch button.on{background:var(--brand); color:#fff; font-weight:700;}
+
+  /* warm empty state */
+  .child-empty{text-align:center; padding:26px 16px;}
+  .child-empty svg{margin-bottom:12px;}
+  .child-empty .ce-title{font-family:'Quicksand',sans-serif; font-size:17px; color:var(--brand-deep); margin-bottom:5px;}
+  .child-empty .ce-body{font-family:'Nunito',sans-serif; font-size:12.5px; color:var(--ink-soft); line-height:1.5; max-width:230px; margin:0 auto 16px;}
+  .child-empty .ce-btn{padding:12px 22px; border-radius:13px; border:none; background:var(--brand); color:#fff; font-family:'Nunito',sans-serif; font-weight:700; font-size:13.5px; cursor:pointer;}
+  .board-count{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--brand);}
+  .board-reward{font-size:12px; color:var(--ink-soft); margin-bottom:12px;}
+  .token-grid{display:flex; flex-wrap:wrap; gap:11px; margin:14px 0 10px;}
+  .token{width:46px; height:46px; border-radius:50%; border:2px dashed var(--brand-pale); display:flex; align-items:center; justify-content:center; transition:all .25s ease; font-size:23px; line-height:1;}
+  .token.filled{border:2px solid var(--brand); background:var(--card);}
+  .token[data-tokfill]{cursor:pointer;}
+  .token.tappable-next{border-color:var(--brand-light); animation:tokPulse 1.8s ease-in-out infinite;}
+  .token.tappable-next:active{transform:scale(0.9);}
+  @keyframes tokPulse{0%,100%{box-shadow:0 0 0 0 rgba(196,85,106,0.0);}50%{box-shadow:0 0 0 4px rgba(196,85,106,0.14);}}
+  @media (prefers-reduced-motion: reduce){ .token.tappable-next{animation:none;} }
+  .token span{display:none;}
+  .token.filled span{display:block;}
+  .board-actions{display:flex; gap:8px;}
+  .token-tap-hint{font-family:'Nunito',sans-serif; font-size:11.5px; font-style:italic; color:var(--brand-light);}
+  .board-foot{display:flex; align-items:center; justify-content:center; gap:12px; margin:2px 0 2px;}
+  .undo-link{font-family:'Nunito',sans-serif; font-size:11.5px; font-weight:700; color:var(--ink-soft); background:none; border:none; text-decoration:underline; cursor:pointer; flex-shrink:0;}
+  .undo-link:active{color:var(--brand);}
+  .open-child-btn{width:100%; margin-top:12px; padding:12px; border-radius:13px; border:1.5px solid var(--brand-pale); background:var(--tint-soft); color:var(--brand); font-family:'Nunito',sans-serif; font-size:13.5px; font-weight:700; cursor:pointer;}
+  .open-child-btn:active{background:var(--brand); color:#fff;}
+  .board-menu{display:flex; flex-direction:column; gap:4px;}
+  .bm-item{text-align:left; font-family:'Nunito',sans-serif; font-size:14px; font-weight:700; color:var(--brand-deep); background:none; border:none; padding:14px 12px; border-radius:11px; cursor:pointer;}
+  .bm-item:active{background:var(--tint-soft);}
+  .bm-item.bm-danger{color:var(--brand-mid);}
+  .bm-item.bm-disabled{color:var(--line); cursor:default;}
+  .board-btn{flex:1; padding:10px; border-radius:11px; border:1px solid var(--line); background:var(--card); font-family:'Nunito',sans-serif; font-size:12.5px; font-weight:500; color:var(--brand-deep); cursor:pointer;}
+  .board-btn.give{background:var(--brand); color:#fff; border-color:var(--brand);}
+  .celebrate{background:var(--card); border:1px solid var(--brand-pale); border-radius:14px; padding:13px; text-align:center; font-size:13px; color:var(--brand-deep); margin-bottom:12px; display:none;}
+  .celebrate.show{display:block; animation:pop .35s ease;}
+  @keyframes pop{0%{transform:scale(0.9); opacity:0;} 100%{transform:scale(1); opacity:1;}}
+  .token.young{width:50px; height:50px; font-size:26px;}
+  .token-flow{display:flex; align-items:center; flex-wrap:wrap; gap:9px; margin-bottom:12px;}
+  .flow-arrow{color:var(--brand-light); font-size:18px; flex-shrink:0;}
+  .reward-tile{width:72px; height:72px; border-radius:18px; background:var(--card); border:2px solid var(--brand-pale); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; flex-shrink:0;}
+  .reward-tile .big{font-size:34px; line-height:1;}
+  .reward-tile .lbl{font-size:9px; font-weight:500; color:var(--brand-deep); text-align:center; padding:0 3px; line-height:1.1;}
+  .reward-tile.won{background:var(--brand); border-color:var(--brand);}
+  .reward-tile.won .lbl{color:#fff;}
+  .progress-track{height:10px; background:var(--tint-soft); border-radius:6px; overflow:hidden; margin-bottom:12px;}
+  .progress-fill{height:100%; background:var(--brand); border-radius:6px; transition:width .3s ease;}
+
+  /* VISUALS */
+  .schedule-card{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px; margin-bottom:12px;}
+  .schedule-title{font-size:15px; font-weight:800; color:var(--brand-deep); cursor:pointer;}
+  button.schedule-title,button.board-open-hint{border:0; background:none; padding:0;}
+  .schedule-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:11px;}
+  .visual-row{display:flex; align-items:center; gap:6px; overflow-x:auto; padding-bottom:4px;}
+  .visual-card{flex-shrink:0; width:78px; background:var(--card); border-radius:14px; padding:10px 6px; text-align:center; border:1px solid var(--line);}
+  .visual-card.done{opacity:0.45;}
+  .visual-emoji{font-size:28px; line-height:1;}
+  .visual-label{font-size:10.5px; color:var(--brand-deep); font-weight:500; margin-top:6px; line-height:1.25;}
+  .visual-arrow{flex-shrink:0; color:var(--brand-light); font-size:15px;}
+  .visual-tap-hint{font-size:11px; color:var(--ink-soft); margin-top:9px;}
+
+  /* SHARE */
+  .prog-overview-head{margin:14px 0 16px;}
+  .po-title{font-family:'Quicksand',sans-serif; font-weight:600; font-size:19px; color:var(--brand-deep);}
+  .po-sub{font-family:'Nunito',sans-serif; font-size:12.5px; color:var(--ink-soft); margin-top:3px;}
+  .po-stats{display:flex; gap:8px; margin-bottom:22px;}
+  .po-stats .s{flex:1; background:var(--tint-soft); border-radius:13px; padding:12px 6px; text-align:center;}
+  .po-stats .s .n{font-family:'JetBrains Mono',monospace; font-size:19px; color:var(--brand);}
+  .po-stats .s .l{font-family:'Nunito',sans-serif; font-size:9.5px; color:var(--ink-soft); margin-top:2px; line-height:1.25;}
+  .weekly-reflection{position:relative; overflow:hidden; margin:-5px 0 22px; padding:15px; border:1px solid var(--brand-pale); border-radius:18px; background:linear-gradient(135deg,#F9EEEE 0%,#FFF9F4 78%);}
+  .weekly-reflection:after{content:'✦'; position:absolute; right:14px; top:7px; color:var(--brand-pale); font-size:30px; line-height:1;}
+  .weekly-reflection-head{position:relative; z-index:1; display:flex; align-items:baseline; gap:8px; margin-bottom:9px;}
+  .weekly-reflection-title{font-family:'Quicksand',sans-serif; font-size:15px; font-weight:700; color:var(--brand-deep);}
+  .weekly-reflection-range{font-size:10.5px; color:var(--ink-soft);}
+  .weekly-reflection-summary{position:relative; z-index:1; font-size:12.5px; color:var(--brand-deep); line-height:1.45; margin-bottom:9px; max-width:270px;}
+  .weekly-reflection-insight{position:relative; z-index:1; display:flex; gap:7px; align-items:flex-start; font-size:11.5px; color:var(--brand-mid); line-height:1.4; margin:5px 0;}
+  .weekly-reflection-insight .mark{font-size:12px; color:var(--brand-light); margin-top:1px;}
+  .weekly-reflection-takeaway{position:relative; z-index:1; width:100%; margin-top:10px; padding:10px 11px; border:1px dashed var(--brand-pale); border-radius:12px; background:rgba(255,255,255,.5); color:var(--brand); text-align:left; font-family:'Nunito',sans-serif; font-size:11.5px; font-weight:700; line-height:1.35; cursor:pointer;}
+  .weekly-reflection-takeaway .label{display:block; font-size:10px; color:var(--ink-soft); font-weight:600; margin-bottom:2px;}
+  .weekly-reflection-takeaway.empty{color:var(--brand-light);}
+  .weekly-reflection-focus{position:relative; z-index:1; margin-top:8px; border:0; background:none; padding:3px 0; color:var(--brand); font-family:'Nunito',sans-serif; font-size:11.5px; font-weight:800; cursor:pointer;}
+  .weekly-focus-review{position:relative; z-index:1; margin:12px 0 2px; padding:11px; border-radius:13px; background:rgba(255,255,255,.58); border:1px solid rgba(232,160,173,.45);}
+  .weekly-focus-review-title{font-size:11.5px; font-weight:800; color:var(--brand-deep);}
+  .weekly-focus-review-copy{font-size:11px; color:var(--ink-soft); line-height:1.4; margin:3px 0 9px;}
+  .weekly-focus-review-actions{display:flex; gap:6px; flex-wrap:wrap;}
+  .weekly-focus-review-actions button{border:1px solid var(--brand-pale); border-radius:999px; padding:6px 9px; background:var(--card); color:var(--brand); font-family:'Nunito',sans-serif; font-size:10.5px; font-weight:800; cursor:pointer;}
+  .weekly-focus-review-actions button:active{background:var(--tint-soft);}
+  .weekly-focus-review-done{position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:9px; margin:11px 0 2px; padding:9px 10px; border-radius:12px; background:rgba(255,255,255,.5); font-size:10.5px; color:var(--ink-soft); line-height:1.35;}
+  .weekly-focus-review-done button{border:0; background:none; padding:3px; color:var(--brand); font-family:'Nunito',sans-serif; font-size:10.5px; font-weight:800; cursor:pointer; white-space:nowrap;}
+  .po-section-label{font-family:'Nunito',sans-serif; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft); margin:0 0 8px;}
+  .po-skills{margin-bottom:22px;}
+  .po-skill{display:flex; align-items:center; gap:11px; padding:12px 0; border-bottom:1px solid var(--line-soft, #F0E6E3);}
+  .po-skill:last-child{border-bottom:none;}
+  .po-skill svg.mini{width:32px; height:32px; flex-shrink:0;}
+  .po-skill .info{flex:1; min-width:0;}
+  .po-skill .nm{font-family:'Nunito',sans-serif; font-size:13.5px; font-weight:700; color:var(--brand-deep);}
+  .po-skill .st{font-family:'Nunito',sans-serif; font-size:11px; color:var(--ink-soft);}
+  .po-dots{display:flex; gap:4px; flex-shrink:0;}
+  .po-dot{width:8px; height:8px; border-radius:50%;}
+  .po-dot.full{background:var(--brand);}
+  .po-dot.empty{background:var(--line);}
+  .po-chevron{color:var(--brand-light); font-size:20px; flex-shrink:0; margin-left:2px;}
+  .po-skill{cursor:pointer;}
+  button.po-skill{width:100%; background:transparent; border-left:0; border-right:0; border-top:0; text-align:left;}
+  .prog-detail-title{font-family:'Quicksand',sans-serif; font-weight:600; font-size:18px; color:var(--brand-deep); text-align:center; margin:2px 0 14px;}
+  .po-boards-wrap{margin-bottom:22px;}
+  .po-board{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line-soft, #F0E6E3);}
+  .po-board:last-child{border-bottom:none;}
+  .po-board .bg{font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; color:var(--brand-deep);}
+  .po-board .bg span{color:var(--ink-soft); font-weight:400;}
+  .po-board .bn{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--brand);}
+  .po-share{padding-top:18px; border-top:1px dashed var(--line); display:flex; flex-direction:column; align-items:center; gap:7px;}
+  .po-share .btn.primary{width:100%;}
+  .po-share-note{font-family:'Nunito',sans-serif; font-size:10.5px; line-height:1.4; color:var(--ink-soft); text-align:center;}
+  .share-opt{display:flex; width:100%; align-items:center; gap:13px; background:var(--card); border:1px solid var(--line); border-radius:13px; padding:14px; margin-bottom:9px; cursor:pointer; text-align:left; font-family:'Nunito',sans-serif;}
+  .share-opt-ic{font-size:22px;}
+  .share-opt-tx{flex:1;}
+  .share-opt-tx .t{font-family:'Nunito',sans-serif; font-size:14px; font-weight:700; color:var(--brand-deep);}
+  .share-opt-tx .s{font-family:'Nunito',sans-serif; font-size:11px; color:var(--ink-soft); margin-top:1px;}
+  .share-opt-ch{color:var(--brand-light); font-size:20px;}
+  .po-empty{font-family:'Nunito',sans-serif; font-size:12.5px; color:var(--ink-soft); padding:14px 0; text-align:center;}
+  .btn{flex:1; padding:11px; border-radius:12px; border:1px solid var(--line); background:var(--card); font-family:'Nunito',sans-serif; font-size:12.5px; font-weight:500; color:var(--ink); cursor:pointer;}
+  .btn.primary{background:var(--brand); color:#fff; border-color:var(--brand);}
+
+  /* FOCUS MODE */
+  .focus-back{display:inline-flex; align-items:center; gap:6px; background:none; border:none; font-family:'Nunito',sans-serif; font-size:13px; font-weight:500; color:var(--brand-deep); cursor:pointer; padding:12px 0 10px;}
+  .board-goal, .schedule-title{cursor:pointer;}
+  .expand-hint{font-size:11px; color:var(--brand-light); margin-left:6px; font-weight:400;}
+  .token.focus{width:64px; height:64px; font-size:33px;}
+  .token.focus.next{cursor:pointer; border-color:var(--brand); animation:tokPulse 1.6s ease-in-out infinite;}
+  @keyframes tokPulse{0%,100%{transform:scale(1); box-shadow:0 0 0 0 rgba(107,18,36,0.25);} 50%{transform:scale(1.06); box-shadow:0 0 0 7px rgba(107,18,36,0);}}
+  .token.focus.next:active{transform:scale(0.92);}
+  .child-prompt{font-family:'Quicksand',sans-serif; font-size:17px; color:var(--brand); text-align:center; margin:2px 0 16px;}
+  .parent-undo{display:block; margin:22px auto 0; background:none; border:none; font-family:'Nunito',sans-serif; font-size:12px; color:var(--ink-soft); cursor:pointer; text-decoration:underline;}
+  .visual-card.big{width:150px; padding:16px 10px; border-radius:18px;}
+  .visual-card.big .visual-emoji{font-size:44px;}
+  .visual-card.big .visual-label{font-size:13px; margin-top:8px;}
+  .visual-col{display:flex; flex-direction:column; align-items:center; gap:4px;}
+  .visual-arrow.down{font-size:18px; padding:2px 0;}
+  .focus-title{font-family:'Quicksand',sans-serif; font-size:20px; font-weight:500; color:var(--brand-deep); margin-bottom:14px;}
+  .reward-tile.focus{width:88px; height:88px;}
+  .reward-tile.focus .big{font-size:42px;}
+  .reward-tile.focus .lbl{font-size:10px;}
+  .reward-tile .photo{width:100%; height:100%; object-fit:cover; border-radius:14px;}
+  .reward-tile.has-photo{padding:0; overflow:hidden; position:relative;}
+  .reward-tile.has-photo .lbl{position:absolute; bottom:0; left:0; right:0; background:rgba(61,10,22,0.72); color:#fff; padding:2px; font-size:9px;}
+
+  /* TABS */
+  nav.tabbar{display:flex; border-top:1px solid #EDD8D5; flex-shrink:0; background:#FDFBF8;}
+  nav.tabbar button{flex:1; padding:10px 0 14px; background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--ink-soft); font-family:'Nunito',sans-serif; font-size:10px; cursor:pointer;}
+  nav.tabbar button.active{color:var(--brand-deep); font-weight:500;}
+  nav.tabbar svg{width:19px; height:19px;}
+  ::-webkit-scrollbar{width:0; height:0;}
+
+  /* ONBOARDING */
+  #onboarding{position:absolute; inset:0; z-index:10; background:linear-gradient(180deg, #FBF4F2, #FDFBF8); display:flex; flex-direction:column; padding:32px 26px 26px; overflow:hidden;}
+  #obPetals{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0;}
+  #onboarding .ob-step{position:relative; z-index:1;}
+  #onboarding.hidden{display:none;}
+  .ob-step{display:none; flex-direction:column; flex:1;}
+  .ob-step.active{display:flex; animation:obFade .35s ease;}
+  @keyframes obFade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+  .ob-bloom{display:block; margin:8px auto 0;}
+  .ob-title{font-family:'Quicksand',sans-serif; font-size:25px; line-height:1.25; color:var(--brand-deep); margin:18px 0 10px; text-align:center;}
+  .ob-title-logo{font-family:'Comfortaa',sans-serif; font-weight:600; display:flex; flex-direction:column; align-items:center; line-height:1.05;}
+  .ob-welcome-to{color:var(--brand-light); font-size:19px;}
+  .ob-brand{color:var(--brand-deep); font-size:52px; margin-top:2px;}
+  .ob-body.ob-tagline{font-family:'Nunito',sans-serif; font-weight:400; font-size:12.5px; color:var(--ink-soft); margin-top:8px;}
+  .ob-body{font-family:'Nunito',sans-serif; font-size:14px; line-height:1.6; color:var(--ink); text-align:center; margin-bottom:6px;}
+  .ob-fine{font-family:'Nunito',sans-serif; font-size:12px; line-height:1.55; color:var(--ink-soft); text-align:center; margin-top:14px; padding:12px 14px; background:var(--tint-soft); border-radius:12px;}
+  .ob-input{width:100%; padding:13px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); font-family:'Nunito',sans-serif; font-size:15px; color:var(--ink); margin-top:8px;}
+  .ob-label{font-family:'Nunito',sans-serif; font-size:13px; font-weight:600; color:var(--brand-deep); margin:16px 0 2px;}
+  .ob-domains{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; justify-content:center; max-height:52vh; overflow-y:auto;}
+  .ob-chip-other{border-style:dashed; color:var(--brand);}
+  .ob-chip{font-family:'Nunito',sans-serif; font-size:13px; font-weight:600; padding:9px 15px; border-radius:22px; border:1px solid var(--line); background:var(--card); color:var(--brand-deep); cursor:pointer;}
+  .ob-chip.sel{background:var(--brand); color:#fff; border-color:var(--brand);}
+  .ob-spacer{flex:1;}
+  .ob-actions{display:flex; gap:10px; margin-top:20px;}
+  .ob-btn{flex:1; padding:14px; border-radius:13px; border:none; font-family:'Nunito',sans-serif; font-size:15px; font-weight:700; cursor:pointer;}
+  .ob-btn.primary{background:var(--brand); color:#fff;}
+  .ob-btn.ghost{background:none; color:var(--ink-soft); font-weight:600; border:1px solid var(--line);}
+  .ob-dots{display:flex; gap:6px; justify-content:center; margin-top:16px;}
+  .ob-dots span{width:7px; height:7px; border-radius:50%; background:var(--line);}
+  .ob-dots span.on{background:var(--brand);}
+  .ob-added{font-family:'Nunito',sans-serif; font-size:13px; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:10px; padding:9px 12px; margin-top:8px; display:flex; align-items:center; gap:8px;}
+  .ob-added .x{margin-left:auto; color:var(--brand-light); cursor:pointer; font-weight:700;}
+  .ob-suggest{margin-top:12px; max-height:46vh; overflow-y:auto;}
+  .ob-grp{display:flex; align-items:center; gap:7px; margin:14px 0 8px;}
+  .ob-grp:first-child{margin-top:2px;}
+  .ob-grp svg{width:15px; height:15px; flex-shrink:0;}
+  .ob-grp span{font-family:'Quicksand',sans-serif; font-weight:700; font-size:13.5px; color:var(--brand-deep);}
+  .ob-sugg{display:flex; align-items:center; gap:9px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px 13px; margin-bottom:7px; font-family:'Nunito',sans-serif; font-size:13px; color:var(--brand-deep); cursor:pointer;}
+  .ob-sugg .mk{margin-left:auto; color:var(--brand-light); font-size:16px; font-weight:700;}
+  .ob-sugg.on{background:var(--tint-soft); border-color:var(--brand-light);}
+  .ob-sugg.on .mk{color:var(--brand);}
+  .ob-add-own{background:none; border:none; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; color:var(--brand); cursor:pointer; margin-top:6px; align-self:center; padding:6px;}
+  .ob-support-heading{flex-basis:100%; margin:10px 0 0; padding:10px 12px; border-radius:12px; background:var(--tint-soft); color:var(--brand-deep); font-size:11.5px; line-height:1.4; text-align:left;}
+  .privacy-note{font-family:'Nunito',sans-serif; font-size:11.5px; line-height:1.5; color:var(--ink-soft); text-align:center; margin:14px 0 4px;}
+  .toast{position:absolute; left:18px; right:18px; bottom:78px; z-index:120; padding:12px 14px; border-radius:13px; background:var(--brand-deep); color:#fff; font-size:12.5px; line-height:1.4; box-shadow:0 12px 28px rgba(61,10,22,.24); opacity:0; transform:translateY(10px); pointer-events:none; transition:opacity .22s ease, transform .22s ease;}
+  .toast.show{opacity:1; transform:translateY(0);}
+  .toast.with-action{pointer-events:auto; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .toast button{border:1px solid rgba(255,255,255,.45); background:transparent; color:#fff; border-radius:8px; padding:5px 8px; font:700 11px 'Nunito',sans-serif; white-space:nowrap; cursor:pointer;}
+  button.token,.visual-card,.schedule-title,.board-open-hint,.po-skill,.share-opt,.size-opt,.emoji-opt{font:inherit; appearance:none; text-align:inherit;}
+  button:focus-visible, input:focus-visible, [tabindex]:focus-visible{outline:3px solid rgba(196,85,106,.45); outline-offset:2px;}
+  @media (max-width:520px){body{padding:0;display:block;background:var(--app-bg)}.stage{display:block}.caption{display:none}.phone{width:100%;height:100dvh;min-height:680px;border:0;border-radius:0;box-shadow:none}}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="phone">
+    <canvas id="ambient"></canvas>
+    <canvas id="burstLayer"></canvas>
+
+    <div id="onboarding">
+      <canvas id="obPetals"></canvas>
+      <!-- STEP 1: WELCOME -->
+      <div class="ob-step active" id="ob1">
+        <div class="ob-spacer"></div>
+        <svg class="ob-bloom" id="obBloom" width="96" height="96" viewBox="0 0 96 96"></svg>
+        <div class="ob-title ob-title-logo"><span class="ob-welcome-to">Welcome to</span><span class="ob-brand">bloom</span></div>
+        <div class="ob-spacer"></div>
+        <div class="ob-actions">
+          <button class="ob-btn primary" onclick="obGo(2)">Get started</button>
+        </div>
+        <div class="ob-dots"><span class="on"></span><span></span><span></span><span></span></div>
+      </div>
+
+      <!-- STEP 2: LIFE DOMAINS (not clinical targets) -->
+      <div class="ob-step" id="ob2">
+        <div class="ob-title" style="margin-top:6px;">What's on your mind lately?</div>
+        <div class="ob-body">Pick any parts of the day you'd like to pay attention to. These are just everyday areas, not goals. You'll decide what to notice.</div>
+        <div class="ob-domains" id="obDomains"></div>
+        <div class="ob-spacer"></div>
+        <div class="ob-actions">
+          <button class="ob-btn ghost" onclick="obGo(1)">Back</button>
+          <button class="ob-btn primary" onclick="obGo(3)">Next</button>
+        </div>
+        <div class="ob-dots"><span></span><span class="on"></span><span></span><span></span></div>
+      </div>
+
+      <!-- STEP 3: CHILD NAME -->
+      <div class="ob-step" id="ob3">
+        <div class="ob-spacer"></div>
+        <svg class="ob-bloom" id="obLogo2" width="96" height="96" viewBox="0 0 96 96"></svg>
+        <div class="ob-title">Who are we cheering on?</div>
+        <div class="ob-body">This just personalizes bloom. Use a nickname, or skip it.</div>
+        <label class="ob-label">Child's name</label>
+        <input class="ob-input" id="obName" placeholder="e.g. Maya" />
+        <div class="ob-fine">For this prototype, what you add stays in this browser. bloom helps you notice everyday moments at home; it supports, and never replaces, professional care.</div>
+        <div class="ob-spacer"></div>
+        <div class="ob-actions">
+          <button class="ob-btn ghost" onclick="obGo(2)">Back</button>
+          <button class="ob-btn primary" onclick="obGo(4)">Next</button>
+        </div>
+        <div class="ob-dots"><span></span><span></span><span class="on"></span><span></span></div>
+      </div>
+
+      <!-- STEP 4: TAP TO ADD SUGGESTED MOMENTS -->
+      <div class="ob-step" id="ob4">
+        <div class="ob-title" style="margin-top:6px;">What would you like to notice?</div>
+        <div class="ob-body">Based on what's on your mind, here are everyday moments you might notice. Tap any that fit, you can add your own or change these anytime.</div>
+        <div class="ob-suggest" id="obSuggest"></div>
+        <button class="ob-add-own" id="obAddOwnBtn">+ Add my own</button>
+        <div class="ob-spacer"></div>
+        <div class="ob-actions">
+          <button class="ob-btn ghost" onclick="obGo(3)">Back</button>
+          <button class="ob-btn primary" onclick="obFinish()">Start using bloom</button>
+        </div>
+        <div class="ob-dots"><span></span><span></span><span></span><span class="on"></span></div>
+      </div>
+    </div>
+
+    <div class="notch"></div>
+    <header class="app-head">
+      <div class="wordmark"><svg id="logoBloom" width="20" height="20" viewBox="0 0 20 20"></svg>bloom</div>
+      <button class="child-chip" id="childChip" aria-haspopup="menu" aria-expanded="false" aria-label="Choose child profile">
+        <span class="child-chip-name" id="childChipName">Maya</span>
+        <span class="child-chip-caret">⌄</span>
+      </button>
+    </header>
+    <div class="child-menu" id="childMenu" role="menu" aria-label="Child profiles and privacy"></div>
+
+    <!-- in-app modal sheet (replaces browser pop-ups) -->
+    <div class="sheet-overlay" id="sheetOverlay" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" aria-hidden="true">
+      <div class="sheet" id="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title" id="sheetTitle"></div>
+        <div class="sheet-body" id="sheetBody"></div>
+      </div>
+    </div>
+
+    <div class="screens">
+
+      <!-- HOME / TODAY -->
+      <section class="screen active" id="screen-home" role="tabpanel" aria-labelledby="tab-home">
+        <div class="hs-date" id="homeDate"></div>
+        <div class="hs-hello"><span id="homeGreetSmall">Good evening</span>,<br><span id="homeGreeting"></span></div>
+        <div class="log-hint" id="homeHint">Tap when it happens</div>
+        <section class="weekly-focus" id="weeklyFocus" hidden aria-label="This week's focus"></section>
+        <div class="target-list" id="targetList"></div>
+        <button class="add-target" id="addTargetBtn">+ add a moment</button>
+        <div class="home-tagline">small steps, real change</div>
+      </section>
+
+      <!-- PROGRESS -->
+      <section class="screen" id="screen-progress" role="tabpanel" aria-labelledby="tab-progress">
+        <!-- OVERVIEW (default) -->
+        <div id="progOverview">
+          <div class="prog-overview-head">
+            <div class="po-title" id="poTitle">How your child's doing</div>
+            <div class="po-sub">The last 2 weeks at a glance</div>
+          </div>
+          <div class="po-stats" id="poStats"></div>
+          <section class="weekly-reflection" id="weeklyReflection" aria-labelledby="weeklyReflectionTitle"></section>
+          <div class="po-section-label">Each moment this week · tap to see more</div>
+          <div class="po-skills" id="poSkills"></div>
+          <div class="po-boards-wrap" id="poBoardsWrap">
+            <div class="po-section-label">Reward boards</div>
+            <div class="po-boards" id="poBoards"></div>
+          </div>
+          <div class="po-share">
+            <button class="btn primary" id="shareBtn">Prepare a home summary ↗</button>
+            <div class="po-share-note">Review what is included before you choose how to share.</div>
+          </div>
+        </div>
+
+        <!-- DETAIL (one skill, shown when tapped) -->
+        <div id="progDetail" style="display:none;">
+          <button class="focus-back" id="progDetailBack">&#8592; all moments</button>
+          <div class="prog-detail-title" id="progDetailTitle"></div>
+          <div class="range-toggle" id="rangeToggle">
+            <button data-range="day" class="on">Day</button>
+            <button data-range="week">Week</button>
+            <button data-range="month">Month</button>
+          </div>
+          <div class="bloom-hero">
+            <svg id="bloomHero" width="165" height="165" viewBox="0 0 165 165"></svg>
+            <div class="bloom-caption" id="bloomCaption"></div>
+            <div class="bloom-sub" id="bloomSub"></div>
+          </div>
+          <div class="stat-row" id="progStatRow"></div>
+          <div class="chart-wrap">
+            <div class="chart-title" id="chartTitle">Daily rhythm, last 14 days</div>
+            <svg id="trendChart" width="100%" height="90" viewBox="0 0 315 90" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- FOR MY CHILD (tokens + visuals) -->
+      <section class="screen" id="screen-child" role="tabpanel" aria-labelledby="tab-child">
+        <div class="seg">
+          <button id="secTokens" class="on">Tokens</button>
+          <button id="secVisuals">Schedules</button>
+        </div>
+
+        <div id="tokensSection">
+          <input type="file" id="rewardPhotoInput" accept="image/*" capture="environment" style="display:none;">
+          <div class="age-row">
+            <span class="age-lbl">Board style</span>
+            <div class="age-switch">
+              <button id="modeYoung" class="on">Simple</button>
+              <button id="modeOlder">Detailed</button>
+            </div>
+          </div>
+          <div class="celebrate" id="celebrateBanner"></div>
+          <div id="boardList"></div>
+          <button class="add-target" id="addBoardBtn">+ new token board</button>
+        </div>
+
+        <div id="visualsSection" style="display:none;">
+          <div id="scheduleList"></div>
+          <button class="add-target" id="addScheduleBtn">+ new schedule</button>
+        </div>
+      </section>
+
+      <!-- FOCUS -->
+      <section class="screen" id="screen-focus">
+        <button class="focus-back" id="focusBack">&#8592; back</button>
+        <div class="celebrate" id="focusCelebrate"></div>
+        <div id="focusContent"></div>
+      </section>
+
+    </div>
+
+    <nav class="tabbar" role="tablist" aria-label="Bloom sections">
+      <button class="tab active" id="tab-home" data-screen="home" role="tab" aria-selected="true" aria-controls="screen-home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 11l8-6 8 6M6 10v9h12v-9"/></svg>
+        Home
+      </button>
+      <button class="tab" id="tab-child" data-screen="child" role="tab" aria-selected="false" aria-controls="screen-child">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><path d="M12 8.5l1.1 2.2 2.4.35-1.75 1.7.4 2.4L12 14l-2.15 1.15.4-2.4-1.75-1.7 2.4-.35z"/></svg>
+        For my child
+      </button>
+      <button class="tab" id="tab-progress" data-screen="progress" role="tab" aria-selected="false" aria-controls="screen-progress">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+        Progress
+      </button>
+    </nav>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+</div>
+
+<script>
+const STORAGE_KEY = 'bloom_data_v8';
+
+function makeChild(id, name, opts){
+  opts = opts || {};
+  return {
+    id, name,
+    ageMode: opts.ageMode || 'young',
+    targets: opts.targets || [],
+    entries: opts.entries || {},
+    observations: opts.observations || [],
+    weeklyReflection: opts.weeklyReflection || null,
+    weeklyFocus: opts.weeklyFocus || null,
+    weeklyFocuses: opts.weeklyFocuses || (opts.weeklyFocus ? [opts.weeklyFocus] : []),
+    boards: opts.boards || [],
+    schedules: opts.schedules || [],
+    events: opts.events || [],
+  };
+}
+
+const DEFAULTS = {
+  activeChildId: 'child1',
+  onboarded: false,
+  children: [
+    {
+      id: 'child1',
+      name: '',
+      ageMode: 'young',
+      targets: [],
+      entries: {},
+      observations: [],
+      weeklyReflection: null,
+      weeklyFocus: null,
+      weeklyFocuses: [],
+      boards: [],
+      schedules: [],
+      events: [],
+    },
+  ],
+};
+
+function todayStr(offset = 0) {
+  const d = new Date(); d.setDate(d.getDate() + offset);
+  return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
+}
+
+// migrate older single-child saves into the multi-child shape
+function migrate(raw){
+  if(raw && raw.children) return raw; // already new shape
+  if(raw && raw.targets){
+    return {
+      activeChildId: 'child1',
+      onboarded: raw.onboarded !== undefined ? raw.onboarded : true,
+      children: [ makeChild('child1', raw.childName || 'My child', {
+        ageMode: raw.ageMode, targets: raw.targets, entries: raw.entries, observations: raw.observations, weeklyReflection: raw.weeklyReflection, weeklyFocus: raw.weeklyFocus, weeklyFocuses: raw.weeklyFocuses,
+        boards: raw.boards, schedules: raw.schedules, events: raw.events,
+      }) ],
+    };
+  }
+  return null;
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) { const m = migrate(JSON.parse(raw)); if(m) return m; }
+    // also try migrating a v6 save
+    for (const legacyKey of ['bloom_data_v7', 'bloom_data_v6']) {
+      const old = localStorage.getItem(legacyKey);
+      if (old) { const m = migrate(JSON.parse(old)); if(m) return m; }
+    }
+  } catch(e){ console.warn('Bloom could not read saved data.', e); }
+  return JSON.parse(JSON.stringify(DEFAULTS));
+}
+function showToast(message, actionLabel, action){
+  const toast=document.getElementById('toast'); if(!toast) return;
+  toast.innerHTML='';
+  const label=document.createElement('span'); label.textContent=message; toast.appendChild(label);
+  toast.classList.toggle('with-action',!!actionLabel);
+  if(actionLabel){ const button=document.createElement('button'); button.type='button'; button.textContent=actionLabel; button.addEventListener('click',()=>{ toast.classList.remove('show'); action(); }); toast.appendChild(button); }
+  toast.classList.add('show');
+  clearTimeout(showToast.timer); showToast.timer=setTimeout(()=>toast.classList.remove('show'),4200);
+}
+function saveData(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(persist)); return true; }
+  catch(e){ console.error('Bloom could not save data.', e); showToast('We could not save that change. Please try again.'); return false; }
+}
+
+// `persist` holds the real saved data (children + activeChildId + onboarded).
+// `state` is a thin view whose accessors point at the ACTIVE child, so all the
+// existing render code that reads state.targets / state.boards / etc. keeps working.
+let persist = loadData();
+if(!persist.children || !persist.children.length){ persist = JSON.parse(JSON.stringify(DEFAULTS)); }
+if(!persist.activeChildId || !persist.children.find(c=>c.id===persist.activeChildId)){
+  persist.activeChildId = persist.children[0].id;
+}
+persist.children.forEach(child=>{
+  if(!Array.isArray(child.observations)) child.observations=[];
+  child.observations.forEach(observation=>{ if(!Array.isArray(observation.help)) observation.help=[]; });
+  if(!Array.isArray(child.weeklyFocuses)) child.weeklyFocuses=child.weeklyFocus?[child.weeklyFocus]:[];
+});
+
+const state = {};
+let currentProgressTarget = null;
+let progressRange = 'day';
+let expandedDetailId = null;
+let previewFocusReviewWeek = null;
+function activeChild(){ return persist.children.find(c=>c.id===persist.activeChildId) || persist.children[0]; }
+['targets','entries','observations','weeklyReflection','weeklyFocus','weeklyFocuses','boards','schedules','events','ageMode'].forEach(key=>{
+  Object.defineProperty(state, key, {
+    get(){ return activeChild()[key]; },
+    set(v){ activeChild()[key]=v; },
+    enumerable:false,
+  });
+});
+Object.defineProperty(state, 'childName', {
+  get(){ return activeChild().name; },
+  set(v){ activeChild().name = v; },
+  enumerable:false,
+});
+Object.defineProperty(state, 'onboarded', {
+  get(){ return persist.onboarded; },
+  set(v){ persist.onboarded = v; },
+  enumerable:false,
+});
+function switchChild(id){
+  if(persist.children.find(c=>c.id===id)){
+    persist.activeChildId = id;
+    currentProgressTarget = state.targets[0] ? state.targets[0].id : null;
+    saveData();
+    renderAll();
+  }
+}
+function addChild(name){
+  const id='child'+Date.now();
+  persist.children.push(makeChild(id, name||'New child'));
+  persist.activeChildId=id;
+  currentProgressTarget=null;
+  saveData();
+  return id;
+}
+function renderAll(){
+  renderHome(); renderLog(); renderProgress(); renderBoards(); renderSchedules(); renderShare(); renderChildSwitcher();
+}
+currentProgressTarget = state.targets[0] ? state.targets[0].id : null;
+
+function renderChildSwitcher(){
+  const nameEl=document.getElementById('childChipName');
+  if(nameEl) nameEl.textContent = activeChild().name;
+  const menu=document.getElementById('childMenu');
+  if(!menu) return;
+  menu.innerHTML = persist.children.map(c=>`
+    <button type="button" role="menuitem" class="child-menu-item ${c.id===persist.activeChildId?'on':''}" data-child="${c.id}">
+      <span class="dot"></span>${escapeHtml(c.name || 'Your child')}
+    </button>`).join('')
+    + `<button type="button" role="menuitem" class="child-menu-item child-menu-add" id="childAddBtn">+ Add a child</button>`
+    + `<button type="button" role="menuitem" class="child-menu-item" id="childPrivacyBtn">Data &amp; privacy</button>`;
+  menu.querySelectorAll('[data-child]').forEach(el=>{
+    el.addEventListener('click',()=>{ menu.classList.remove('open'); switchChild(el.dataset.child); });
+  });
+  document.getElementById('childAddBtn').addEventListener('click',()=>{
+    menu.classList.remove('open');
+    openSheet('Add a child', `
+      <div class="sheet-sub">You can track each child separately and switch between them anytime.</div>
+      <div class="sheet-field">
+        <label class="sheet-label">Child's name or nickname</label>
+        <input class="sheet-input" id="acName" placeholder="e.g. Liam" autocomplete="off">
+      </div>
+      <div class="sheet-actions">
+        <button class="sheet-btn ghost" onclick="closeSheet()">Cancel</button>
+        <button class="sheet-btn primary" id="acSave">Add child</button>
+      </div>
+    `);
+    const save=()=>{
+      const name=document.getElementById('acName').value.trim();
+      if(!name){ document.getElementById('acName').focus(); return; }
+      addChild(name); renderAll(); closeSheet(); startChildSetup(name);
+    };
+    document.getElementById('acSave').addEventListener('click',save);
+    document.getElementById('acName').addEventListener('keydown',e=>{ if(e.key==='Enter') save(); });
+    setTimeout(()=>document.getElementById('acName').focus(),200);
+  });
+  document.getElementById('childPrivacyBtn').addEventListener('click',()=>{ menu.classList.remove('open'); openPrivacySheet(); });
+}
+
+function openPrivacySheet(){
+  openSheet('Data & privacy', `
+    <div class="sheet-sub">Bloom keeps this prototype's information in this browser only. It is not synced to an account or sent anywhere unless you choose to share a summary.</div>
+    <div class="sheet-field"><div class="sheet-hint">On a shared device, use a separate browser profile or remove data after use. Clearing browser data can also remove Bloom data.</div></div>
+    <div class="sheet-actions"><button class="sheet-btn danger" id="eraseBloomData">Erase all Bloom data</button></div>
+    <button class="sheet-btn ghost" style="width:100%;margin-top:10px" onclick="closeSheet()">Done</button>
+  `);
+  document.getElementById('eraseBloomData').addEventListener('click',()=>{
+    openSheet('Erase all data?', `
+      <div class="sheet-sub">This permanently removes every child profile, moment, board, and schedule saved in Bloom on this browser.</div>
+      <div class="sheet-actions"><button class="sheet-btn ghost" onclick="openPrivacySheet()">Keep my data</button><button class="sheet-btn danger" id="confirmEraseBloomData">Erase permanently</button></div>
+    `);
+    document.getElementById('confirmEraseBloomData').addEventListener('click',()=>{ localStorage.removeItem(STORAGE_KEY); window.location.reload(); });
+  });
+}
+
+function countFor(tid, day){ return (state.entries[tid] && state.entries[tid][day]) || 0; }
+function totalFor(tid){ const e = state.entries[tid]||{}; return Object.values(e).reduce((a,b)=>a+b,0); }
+function streakFor(tid){ let s=0; for(let i=0;i<60;i++){ if(countFor(tid,todayStr(-i))>0)s++; else break; } return s; }
+function weekFor(tid){ let sum=0; for(let i=0;i<7;i++) sum+=countFor(tid,todayStr(-i)); return sum; }
+function monthFor(tid){ let sum=0; for(let i=0;i<30;i++) sum+=countFor(tid,todayStr(-i)); return sum; }
+// sum over an inclusive day-offset window [startOffset, endOffset] where offsets are days-ago
+function sumRange(tid, startOffset, endOffset){
+  let sum=0;
+  for(let i=endOffset;i<=startOffset;i++) sum+=countFor(tid, todayStr(-i));
+  return sum;
+}
+// active days (days with >=1 log) in the last n days
+function activeDays(tid, n){
+  let c=0; for(let i=0;i<n;i++){ if(countFor(tid,todayStr(-i))>0) c++; } return c;
+}
+function weekStartStr(){
+  const d=new Date();
+  d.setDate(d.getDate()-((d.getDay()+6)%7));
+  return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
+}
+
+function pushEvent(icon, text){
+  state.events = state.events || [];
+  state.events.unshift({ icon, text, ts: Date.now() });
+  state.events = state.events.slice(0, 12);
+}
+function logEntry(tid){
+  const day = todayStr();
+  state.entries[tid] = state.entries[tid]||{};
+  state.entries[tid][day] = (state.entries[tid][day]||0)+1;
+  const t = state.targets.find(x=>x.id===tid);
+  const observation={id:'o'+Date.now(), targetId:tid, day, ts:Date.now(), support:'', help:[], note:''};
+  state.observations.unshift(observation);
+  expandedDetailId=observation.id;
+  pushEvent('🌱', `Logged: ${t?t.name:'a moment'}`);
+  saveData();
+  renderLog();
+  renderProgress();
+  renderHome();
+  renderShare();
+  showToast('Moment logged.');
+}
+
+function removeEntry(tid){
+  const day = todayStr();
+  const cur = (state.entries[tid] && state.entries[tid][day]) || 0;
+  if(cur <= 0) return;
+  state.entries[tid][day] = cur - 1;
+  if(state.entries[tid][day] === 0) delete state.entries[tid][day];
+  const last=[...state.observations].find(o=>o.targetId===tid && o.day===day);
+  if(last) state.observations=state.observations.filter(o=>o.id!==last.id);
+  saveData();
+  renderLog();
+  renderProgress();
+  renderHome();
+  renderShare();
+}
+
+function contextLabel(observation){
+  if(!observation || !observation.support) return '';
+  return observation.support==='independent' ? 'independent' : observation.support==='support' ? 'with support' : 'a hard moment';
+}
+const HELP_OPTIONS=[
+  ['visual','Visual reminder'], ['quiet','Quiet space'], ['choice','Choice'],
+  ['break','Break'], ['routine','Routine'], ['caregiver','Caregiver support'],
+];
+function helpLabel(value){ return (HELP_OPTIONS.find(([key])=>key===value)||[])[1]||''; }
+function openMomentDetail(observationId){
+  const observation=state.observations.find(o=>o.id===observationId); if(!observation) return;
+  const moment=state.targets.find(t=>t.id===observation.targetId);
+  const choices=[['independent','Independent'],['support','With support'],['hard','Hard moment']];
+  openSheet('Add a little context', `
+    <div class="sheet-sub">Optional details help you notice what is working. This stays a parent observation, not a clinical rating.</div>
+    <div class="sheet-field"><label class="sheet-label">How did ${escapeHtml(moment?.name||'this moment')} go?</label>
+      <div class="size-pick" id="momentSupport">${choices.map(([value,label])=>`<button type="button" class="size-opt ${observation.support===value?'on':''}" data-support="${value}">${label}</button>`).join('')}</div>
+    </div>
+    <div class="sheet-field"><label class="sheet-label">What seemed to help? <span class="sheet-hint">Choose any</span></label>
+      <div class="context-chip-grid" id="momentHelp">${HELP_OPTIONS.map(([value,label])=>`<button type="button" class="context-chip" data-help="${value}" aria-pressed="${(observation.help||[]).includes(value)}">${label}</button>`).join('')}</div>
+    </div>
+    <div class="sheet-field"><label class="sheet-label" for="momentNote">A short note, if helpful</label><textarea class="sheet-input" id="momentNote" rows="3" maxlength="280" placeholder="What did you notice?"></textarea></div>
+    <div class="sheet-actions"><button class="sheet-btn ghost" onclick="closeSheet()">Skip</button><button class="sheet-btn primary" id="saveMomentDetail">Save detail</button></div>
+  `);
+  const sheetBody=document.getElementById('sheetBody');
+  sheetBody.querySelector('#momentNote').value=observation.note||'';
+  let selected=observation.support||'';
+  let selectedHelp=[...(observation.help||[])];
+  sheetBody.querySelectorAll('[data-support]').forEach(button=>button.addEventListener('click',()=>{ selected=button.dataset.support; sheetBody.querySelectorAll('[data-support]').forEach(item=>item.classList.toggle('on',item===button)); }));
+  sheetBody.querySelectorAll('[data-help]').forEach(button=>button.addEventListener('click',()=>{
+    const value=button.dataset.help;
+    selectedHelp=selectedHelp.includes(value) ? selectedHelp.filter(item=>item!==value) : [...selectedHelp,value];
+    button.setAttribute('aria-pressed',String(selectedHelp.includes(value)));
+  }));
+  sheetBody.querySelector('#saveMomentDetail').addEventListener('click',()=>{
+    observation.support=selected; observation.help=selectedHelp; observation.note=sheetBody.querySelector('#momentNote').value.trim();
+    saveData(); renderLog(); renderShare(); closeSheet(); showToast('Detail saved.');
+  });
+}
+
+/* BLOOM SVG */
+function halfBloomSVG(size){
+  const cx=size/2, cy=size/2;
+  const pl=size*0.38, pw=size*0.20;
+  const SHADES=['#E8A0AD','#C4556A','#A63A50','#8B1A2F','#6B1224','#6B1224'];
+  let out='';
+  [36,72,108,144].forEach(a=>{
+    out+=`<ellipse cx="${cx}" cy="${cy-pl/1.45}" rx="${pw*0.42}" ry="${pl*0.42}" fill="none" stroke="#A63A50" stroke-width="${size*0.011+0.6}" stroke-dasharray="${size*0.015+0.8} ${size*0.028+1.2}" stroke-linecap="round" opacity="0.85" transform="rotate(${a} ${cx} ${cy})"/>`;
+  });
+  [0,324,288,252,216,180].forEach((a,i)=>{
+    out+=`<ellipse cx="${cx}" cy="${cy-pl/1.7}" rx="${pw/2}" ry="${pl/2}" fill="${SHADES[i]}" opacity="0.94" transform="rotate(${a} ${cx} ${cy})"/>`;
+  });
+  return out+`<circle cx="${cx}" cy="${cy}" r="${size*0.09}" fill="#3D0A16"/>`;
+}
+
+
+function bloomSVG(streak, size){
+  const cx=size/2, cy=size/2, maxP=10;
+  const pc = Math.max(3, Math.min(maxP, 2+streak));
+  const pl = size*0.38, pw = size*0.20;
+  const SHADES=['#E8A0AD','#C4556A','#A63A50','#8B1A2F','#6B1224'];
+  // spread the palette across all petals so no two neighbors share a shade
+  const colorFor = i => SHADES[Math.round(i*(SHADES.length-1)/Math.max(1,pc-1))];
+  const edge = Math.max(0.6, size*0.007);
+  let petals='';
+  for(let i=0;i<pc;i++){
+    const a=(360/maxP)*i-90;
+    petals+=`<ellipse cx="${cx}" cy="${cy-pl/1.7}" rx="${pw/2}" ry="${pl/2}" fill="${colorFor(i)}" stroke="#FDFBF8" stroke-width="${edge}" opacity="0.96" transform="rotate(${a} ${cx} ${cy})"/>`;
+  }
+  return petals+`<circle cx="${cx}" cy="${cy}" r="${size*0.115}" fill="#3D0A16"/>`;
+}
+
+/* HOME / TODAY (merged with logging) */
+function renderHome(){
+  const now=new Date();
+  const hour=now.getHours();
+  const greeting = hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
+  const who = (state.childName && state.childName!=='your family') ? state.childName+"'s family" : 'there';
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dt=document.getElementById('homeDate'); if(dt) dt.textContent=`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+  const gs=document.getElementById('homeGreetSmall'); if(gs) gs.textContent = greeting;
+  const g=document.getElementById('homeGreeting'); if(g) g.textContent = who;
+  renderWeeklyFocus();
+  // the tappable skill rows live here now
+  renderLog();
+}
+
+function currentWeeklyFocus(){
+  return state.weeklyFocuses.find(focus=>focus.week===weekStartStr()) || null;
+}
+function pendingFocusReview(){
+  const currentWeek=weekStartStr();
+  return [...state.weeklyFocuses].filter(focus=>focus.week<currentWeek && !focus.review).sort((a,b)=>b.week.localeCompare(a.week))[0] || null;
+}
+function mostRecentFocusReview(){
+  return [...state.weeklyFocuses].filter(focus=>focus.week<weekStartStr() && focus.review).sort((a,b)=>b.week.localeCompare(a.week))[0] || null;
+}
+function focusPlanText(focus){
+  const target=state.targets.find(item=>item.id===focus.targetId);
+  if(!target) return 'your weekly focus';
+  return focus.help ? `${helpLabel(focus.help)} for ${target.name}` : `a small step with ${target.name}`;
+}
+function weeklyFocusDefaultTarget(){
+  const ranked=state.targets.map(target=>[target,weekFor(target.id)]).sort((a,b)=>b[1]-a[1]);
+  return ranked[0]?.[0] || state.targets[0] || null;
+}
+function renderWeeklyFocus(){
+  const section=document.getElementById('weeklyFocus'); if(!section) return;
+  const focus=currentWeeklyFocus();
+  if(!focus){ section.hidden=true; section.innerHTML=''; return; }
+  const target=state.targets.find(item=>item.id===focus.targetId);
+  if(!target){ section.hidden=true; section.innerHTML=''; return; }
+  const plan=focus.help ? `${helpLabel(focus.help)} for ${target.name}` : `One small thing to try with ${target.name}`;
+  section.hidden=false;
+  section.innerHTML=`<div class="weekly-focus-mark">✦</div><div class="weekly-focus-body"><div class="weekly-focus-kicker">This week’s focus</div><div class="weekly-focus-plan">${escapeHtml(plan)}</div>${focus.note?`<div class="weekly-focus-note">${escapeHtml(focus.note)}</div>`:''}</div><button type="button" class="weekly-focus-edit" id="weeklyFocusEdit">Edit</button>`;
+  document.getElementById('weeklyFocusEdit').addEventListener('click',openWeeklyFocusSheet);
+}
+
+function timeAgo(ts){
+  const mins=Math.round((Date.now()-ts)/60000);
+  if(mins<1) return 'just now';
+  if(mins<60) return `${mins} min ago`;
+  const hrs=Math.round(mins/60);
+  if(hrs<24) return `${hrs} ${hrs===1?'hour':'hours'} ago`;
+  const days=Math.round(hrs/24);
+  return `${days} ${days===1?'day':'days'} ago`;
+}
+
+/* LOG */
+function buildTargetCard(t){
+  const today=countFor(t.id,todayStr()), streak=streakFor(t.id);
+  const latest=state.observations.find(o=>o.targetId===t.id && o.day===todayStr());
+  const hasDetail=!!(latest && (latest.support || latest.note || (latest.help||[]).length));
+  const showInlineDetail=latest && expandedDetailId===latest.id;
+  const recentDays=activeDays(t.id,14);
+  let dots='';
+  for(let i=6;i>=0;i--){ dots+=`<span class="wk-dot ${countFor(t.id,todayStr(-i))>0?'on':''}"></span>`; }
+  const card=document.createElement('div'); card.className='target-card'; card.dataset.id=t.id; card.tabIndex=0; card.setAttribute('role','button'); card.setAttribute('aria-label',`Log ${t.name}`);
+  card.innerHTML=`<div class="target-card-main">
+      <svg class="bloom-mini" viewBox="0 0 40 40">${bloomSVG(streak,40)}</svg>
+      <div class="target-info">
+        <div class="target-name">${escapeHtml(t.name)}</div>
+        <div class="target-meta">${recentDays>0? recentDays+' '+(recentDays===1?'day':'days')+' noticed recently':'not noticed yet'}${contextLabel(latest)?' · '+contextLabel(latest):''}</div>
+        <div class="wk-dots">${dots}</div>
+        ${latest?`<button type="button" class="detail-link ${hasDetail?'is-complete':''}" data-detail="${latest.id}" aria-label="${hasDetail?'Edit':'Add'} detail for ${escapeAttr(t.name)}">${hasDetail?'Edit detail':'✦ Add detail'}</button>`:''}
+      </div>
+      ${today>0?`<button class="target-minus" data-minus="${t.id}" aria-label="Remove one">−</button>`:''}
+      <div class="target-count${today===0?' zero':''}">${today}</div>
+      <button class="row-edit" data-edit="${t.id}" aria-label="Edit moment">⋯</button>
+    </div>${showInlineDetail?`<div class="inline-detail" data-inline-detail="${latest.id}">
+      <div class="inline-detail-label">What seemed to help? <span>Choose any</span></div>
+      <div class="context-chip-grid">${HELP_OPTIONS.map(([value,label])=>`<button type="button" class="context-chip" data-inline-help="${value}" aria-pressed="${(latest.help||[]).includes(value)}">${label}</button>`).join('')}</div>
+      <textarea class="inline-note" maxlength="280" placeholder="Add a short note (optional)">${escapeHtml(latest.note||'')}</textarea>
+      <div class="inline-detail-actions"><button type="button" class="inline-skip" data-inline-cancel>Not now</button><button type="button" class="inline-done" data-inline-save>Done</button></div>
+    </div>`:''}`;
+  return card;
+}
+function renderLog(){
+  const list=document.getElementById('targetList'); const addButton=document.getElementById('addTargetBtn'); list.innerHTML='';
+  if(state.targets.length===0){
+    addButton.hidden=true;
+    list.style.padding='0';
+    list.style.border='none';
+    list.style.background='none';
+    list.innerHTML=`<div class="child-empty">
+      <svg width="64" height="64" viewBox="0 0 64 64">${bloomSVG(3,64)}</svg>
+      <div class="ce-title">Let's plant your first seed</div>
+      <div class="ce-body">Add one small, everyday moment you'd like to notice. Each time it happens, tap it, and watch it bloom.</div>
+      <button class="ce-btn" id="emptyTargetBtn">Add a moment to notice</button>
+    </div>`;
+    document.getElementById('emptyTargetBtn').addEventListener('click',()=>document.getElementById('addTargetBtn').click());
+    return;
+  }
+  addButton.hidden=false;
+  list.style.padding='';
+  list.style.border='';
+  list.style.background='';
+
+  // split by time of day: "right now" (matches current bucket, or anytime) vs the rest
+  const now=timeOfDayNow();
+  const timeWord = now==='morning'?'This morning':now==='afternoon'?'This afternoon':'This evening';
+  const rightNow=[], later=[];
+  state.targets.forEach(t=>{
+    const tt=t.time||'anytime';
+    if(tt===now || tt==='anytime') rightNow.push(t); else later.push(t);
+  });
+
+  // only show the grouped display if there's a meaningful split
+  const useGroups = rightNow.length>0 && later.length>0;
+
+  if(useGroups){
+    const banner=document.createElement('div'); banner.className='time-banner';
+    banner.innerHTML=`${timeWord}`;
+    list.appendChild(banner);
+    rightNow.forEach(t=>list.appendChild(buildTargetCard(t)));
+    const div=document.createElement('div'); div.className='later-divider';
+    div.textContent='Later today';
+    list.appendChild(div);
+    later.forEach(t=>{ list.appendChild(buildTargetCard(t)); });
+  } else {
+    state.targets.forEach(t=>list.appendChild(buildTargetCard(t)));
+  }
+
+  list.querySelectorAll('.target-card').forEach(c=>c.addEventListener('click',(e)=>{
+    if(e.target.closest('button, textarea')) return;
+    burst(c,12); logEntry(c.dataset.id);
+  }));
+  list.querySelectorAll('.target-card').forEach(c=>c.addEventListener('keydown',(e)=>{
+    if((e.key==='Enter'||e.key===' ') && !e.target.closest('button')){ e.preventDefault(); burst(c,12); logEntry(c.dataset.id); }
+  }));
+  list.querySelectorAll('[data-minus]').forEach(b=>b.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    removeEntry(b.dataset.minus);
+  }));
+  list.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    editTarget(b.dataset.edit);
+  }));
+  list.querySelectorAll('[data-detail]').forEach(b=>b.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    expandedDetailId=b.dataset.detail;
+    renderLog();
+  }));
+  list.querySelectorAll('[data-inline-cancel]').forEach(button=>button.addEventListener('click',()=>{ expandedDetailId=null; renderLog(); }));
+  list.querySelectorAll('[data-inline-save]').forEach(button=>button.addEventListener('click',()=>{
+    const detail=button.closest('[data-inline-detail]');
+    const observation=state.observations.find(item=>item.id===detail.dataset.inlineDetail); if(!observation) return;
+    observation.help=Array.from(detail.querySelectorAll('[data-inline-help][aria-pressed="true"]')).map(item=>item.dataset.inlineHelp);
+    observation.note=detail.querySelector('.inline-note').value.trim();
+    expandedDetailId=null;
+    saveData(); renderLog(); renderShare(); showToast('Detail saved.');
+  }));
+  list.querySelectorAll('[data-inline-help]').forEach(button=>button.addEventListener('click',()=>button.setAttribute('aria-pressed',String(button.getAttribute('aria-pressed')!=='true'))));
+}
+
+function editTarget(tid){
+  const t=state.targets.find(x=>x.id===tid); if(!t) return;
+  openSheet('Edit', `
+    <div class="sheet-field">
+      <label class="sheet-label">Name</label>
+      <input class="sheet-input" id="etName" value="${escapeAttr(t.name)}" autocomplete="off">
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-btn danger" id="etDelete">Delete</button>
+      <button class="sheet-btn primary" id="etSave">Save</button>
+    </div>
+  `);
+  document.getElementById('etSave').addEventListener('click',()=>{
+    const v=document.getElementById('etName').value.trim();
+    if(v){ t.name=v; saveData(); renderAll(); closeSheet(); }
+  });
+  document.getElementById('etDelete').addEventListener('click',()=>{
+    state.targets = state.targets.filter(x=>x.id!==tid);
+    state.observations=state.observations.filter(o=>o.targetId!==tid);
+    if(currentProgressTarget===tid) currentProgressTarget = state.targets[0]?state.targets[0].id:null;
+    saveData(); renderAll(); closeSheet();
+  });
+  setTimeout(()=>document.getElementById('etName').focus(),200);
+}
+
+/* PROGRESS */
+function openSkillDetail(tid){
+  currentProgressTarget = tid;
+  progressRange = 'day';
+  document.getElementById('progOverview').style.display='none';
+  document.getElementById('progDetail').style.display='';
+  renderProgress();
+}
+function backToOverview(){
+  document.getElementById('progDetail').style.display='none';
+  document.getElementById('progOverview').style.display='';
+  renderShare();
+}
+
+function renderProgress(){
+  if(!currentProgressTarget && state.targets[0]) currentProgressTarget=state.targets[0].id;
+  const tid=currentProgressTarget;
+  if(!tid) return;
+  const cur=state.targets.find(t=>t.id===tid);
+  const titleEl=document.getElementById('progDetailTitle');
+  if(titleEl) titleEl.textContent = cur?cur.name:'';
+
+  // range toggle (day/week/month)
+  const rt=document.getElementById('rangeToggle');
+  rt.querySelectorAll('button').forEach(b=>{
+    b.classList.toggle('on', b.dataset.range===progressRange);
+    b.onclick=()=>{ progressRange=b.dataset.range; renderProgress(); };
+  });
+
+  const streak=streakFor(tid);
+  document.getElementById('bloomHero').innerHTML=bloomSVG(streak,165);
+
+  const statRow=document.getElementById('progStatRow');
+  const chartTitle=document.getElementById('chartTitle');
+  let labels=[], vals=[], cap, sub;
+
+  if(progressRange==='day'){
+    const total=totalFor(tid), week=weekFor(tid);
+    statRow.innerHTML=`
+      <div class="stat-card"><div class="stat-num">${countFor(tid,todayStr())}</div><div class="stat-label">today</div></div>
+      <div class="stat-card"><div class="stat-num">${streak}</div><div class="stat-label">day streak</div></div>
+      <div class="stat-card"><div class="stat-num">${week}</div><div class="stat-label">this week</div></div>`;
+    chartTitle.textContent='Daily rhythm, last 14 days';
+    for(let i=13;i>=0;i--){ vals.push(countFor(tid,todayStr(-i))); }
+    if(total===0){ cap='Ready to grow'; sub='Log a moment to plant the first petal'; }
+    else if(streak===0){ cap='Taking shape'; sub='Steady days make it bloom'; }
+    else if(streak<3){ cap='Coming into bloom'; sub=`${streak} days in a row`; }
+    else if(streak<6){ cap='Blooming beautifully'; sub=`${streak} days in a row`; }
+    else { cap='In full bloom'; sub='your steadiest skill yet'; }
+
+  } else if(progressRange==='week'){
+    const thisWeek=weekFor(tid);
+    const lastWeek=sumRange(tid,13,7);
+    const activeThisWeek=activeDays(tid,7);
+    statRow.innerHTML=`
+      <div class="stat-card"><div class="stat-num">${thisWeek}</div><div class="stat-label">this week</div></div>
+      <div class="stat-card"><div class="stat-num">${activeThisWeek}/7</div><div class="stat-label">active days</div></div>
+      <div class="stat-card"><div class="stat-num">${lastWeek}</div><div class="stat-label">last week</div></div>`;
+    chartTitle.textContent='Weekly totals, last 8 weeks';
+    for(let w=7;w>=0;w--){ vals.push(sumRange(tid, w*7+6, w*7)); }
+    const diff=thisWeek-lastWeek;
+    cap = thisWeek===0 ? 'A quiet week' : diff>=0 ? 'Growing week on week' : 'Keep it steady';
+    sub = lastWeek===0 ? `${thisWeek} logged this week` : `${diff>=0?'+':''}${diff} vs last week`;
+
+  } else { // month
+    const thisMonth=monthFor(tid);
+    const lastMonth=sumRange(tid,59,30);
+    const activeThisMonth=activeDays(tid,30);
+    statRow.innerHTML=`
+      <div class="stat-card"><div class="stat-num">${thisMonth}</div><div class="stat-label">this month</div></div>
+      <div class="stat-card"><div class="stat-num">${activeThisMonth}</div><div class="stat-label">active days</div></div>
+      <div class="stat-card"><div class="stat-num">${lastMonth}</div><div class="stat-label">last month</div></div>`;
+    chartTitle.textContent='Monthly totals, last 6 months';
+    for(let m=5;m>=0;m--){ vals.push(sumRange(tid, m*30+29, m*30)); }
+    const diff=thisMonth-lastMonth;
+    cap = thisMonth===0 ? 'A fresh month' : diff>=0 ? 'Building momentum' : 'Every month counts';
+    sub = lastMonth===0 ? `${thisMonth} logged this month` : `${diff>=0?'+':''}${diff} vs last month`;
+  }
+
+  document.getElementById('bloomCaption').textContent=cap;
+  document.getElementById('bloomSub').textContent=sub;
+
+  // smooth line chart from vals
+  const max=Math.max(1,...vals), w=315, h=90, pad=8, stepX=(w-pad*2)/(vals.length-1);
+  const pt=vals.map((v,i)=>[pad+i*stepX, h-pad-(v/max)*(h-pad*2)]);
+  let d=`M ${pt[0][0]} ${pt[0][1]}`;
+  for(let i=1;i<pt.length;i++){
+    const [x0,y0]=pt[i-1], [x1,y1]=pt[i];
+    const cx=(x0+x1)/2;
+    d+=` C ${cx} ${y0}, ${cx} ${y1}, ${x1} ${y1}`;
+  }
+  const area=d+` L ${pt[pt.length-1][0]} ${h-pad} L ${pt[0][0]} ${h-pad} Z`;
+  document.getElementById('trendChart').innerHTML=`
+    <defs><linearGradient id="progFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C4556A" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#C4556A" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#progFill)"/>
+    <path d="${d}" fill="none" stroke="#6B1224" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${pt.map((p,i)=>vals[i]>0?`<circle cx="${p[0]}" cy="${p[1]}" r="2.6" fill="#8B1A2F"/>`:'').join('')}`;
+}
+
+/* TOKENS */
+const TOKEN_EMOJI_CHOICES=['⭐','🌟','😊','🦋','🌸','🚀','🦖','🐠','⚡','🏅','💎','🍩'];
+function rewardTileInner(b){
+  if(b.rewardPhoto){
+    return `<img class="photo" src="${escapeAttr(b.rewardPhoto)}" alt="${escapeAttr(b.reward)}"><span class="lbl">${escapeHtml(b.reward)}</span>`;
+  }
+  return `<span class="big">${escapeHtml(b.rewardEmoji||'⭐')}</span><span class="lbl">${escapeHtml(b.reward)}</span>`;
+}
+function childFirstName(){
+  const n = state.childName;
+  if(!n || n==='your family' || n==='My child') return 'they';
+  return n.trim().split(/\s+/)[0];
+}
+function openBoardMenu(bid){
+  const b=state.boards.find(x=>x.id===bid); if(!b) return;
+  openSheet(b.goal, `
+    <div class="board-menu">
+      <button class="bm-item" id="bmEdit">Edit board</button>
+      <button class="bm-item bm-danger" id="bmDelete">Delete board</button>
+    </div>
+  `);
+  document.getElementById('bmEdit').addEventListener('click',()=>{ closeSheet(); setTimeout(()=>editBoard(bid),150); });
+  document.getElementById('bmDelete').addEventListener('click',()=>{
+    state.boards = state.boards.filter(x=>x.id!==bid); saveData(); renderAll(); closeSheet();
+  });
+}
+
+function editBoard(bid){
+  const b=state.boards.find(x=>x.id===bid); if(!b) return;
+  openSheet('Edit board', `
+    <div class="sheet-field">
+      <label class="sheet-label">What you're working on</label>
+      <input class="sheet-input" id="ebGoal" value="${escapeAttr(b.goal)}" autocomplete="off">
+    </div>
+    <div class="sheet-field">
+      <label class="sheet-label">Reward</label>
+      <input class="sheet-input" id="ebReward" value="${escapeAttr(b.reward)}" autocomplete="off">
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-btn danger" id="ebDelete">Delete</button>
+      <button class="sheet-btn primary" id="ebSave">Save</button>
+    </div>
+  `);
+  document.getElementById('ebSave').addEventListener('click',()=>{
+    const g=document.getElementById('ebGoal').value.trim();
+    const r=document.getElementById('ebReward').value.trim();
+    if(g){ b.goal=g; if(r) b.reward=r; saveData(); renderAll(); closeSheet(); }
+  });
+  document.getElementById('ebDelete').addEventListener('click',()=>{
+    state.boards = state.boards.filter(x=>x.id!==bid); saveData(); renderAll(); closeSheet();
+  });
+  setTimeout(()=>document.getElementById('ebGoal').focus(),200);
+}
+
+function renderBoards(){
+  const young = state.ageMode === 'young';
+  document.getElementById('modeYoung').classList.toggle('on', young);
+  document.getElementById('modeOlder').classList.toggle('on', !young);
+  const list=document.getElementById('boardList'); list.innerHTML='';
+
+  if(state.boards.length===0){
+    list.innerHTML=`<div class="child-empty">
+      <svg width="64" height="64" viewBox="0 0 64 64">${bloomSVG(4,64)}</svg>
+      <div class="ce-title">Turn wins into something to see</div>
+      <div class="ce-body">A token board lets your child collect stars toward a reward they're excited about. Great for motivation.</div>
+      <button class="ce-btn" id="emptyBoardBtn">Create a token board</button>
+    </div>`;
+    document.getElementById('emptyBoardBtn').addEventListener('click',()=>document.getElementById('addBoardBtn').click());
+    return;
+  }
+
+  state.boards.forEach(b=>{
+    const card=document.createElement('div'); card.className='board-card';
+    const tok = b.tokenEmoji || '⭐';
+    let tokens='';
+    for(let i=0;i<b.size;i++){
+      const isFilled = i<b.filled;
+      const isNext = i===b.filled;
+      const tokenClass=`token ${young?'young':''} ${isFilled?'filled':''} ${isNext?'tappable-next':''}`;
+      tokens+=isFilled
+        ? `<div class="${tokenClass}"><span>${escapeHtml(tok)}</span></div>`
+        : `<button type="button" class="${tokenClass}" data-tokfill="${b.id}" aria-label="Add a token to ${escapeAttr(b.goal)}"><span></span></button>`;
+    }
+    const remaining = Math.max(0, b.size - b.filled);
+    const rewardLine = b.filled>=b.size
+      ? `Complete! Time for ${b.reward} ${b.rewardEmoji||''}`
+      : `${remaining} more for ${b.reward} ${b.rewardEmoji||''}`;
+    const tokenBlock = young
+      ? `<div class="token-flow">${tokens}<span class="flow-arrow">➜</span>
+           <div class="reward-tile ${b.rewardPhoto?'has-photo':''} ${b.filled>=b.size?'won':''}">
+             ${rewardTileInner(b)}
+           </div>
+         </div>`
+      : `<div class="token-grid">${tokens}</div>`;
+    card.innerHTML=`
+      <div class="board-head">
+        <div class="board-head-info">
+          <div class="board-goal">${escapeHtml(b.goal)}</div>
+          <div class="board-reward">${escapeHtml(rewardLine)}</div>
+        </div>
+        <button class="row-edit" data-boardmenu="${b.id}" aria-label="Board options">⋯</button>
+      </div>
+      ${tokenBlock}
+      <div class="board-foot">
+        <span class="token-tap-hint">Tap a star when ${childFirstName()} earns it</span>
+        ${b.filled>0?`<button class="undo-link" data-undo="${b.id}">undo</button>`:''}
+      </div>
+      <button class="open-child-btn" data-focus="${b.id}">Open for ${childFirstName()==='they'?'my child':childFirstName()}</button>`;
+    list.appendChild(card);
+  });
+  list.querySelectorAll('[data-focus]').forEach(g=>g.addEventListener('click',(e)=>{
+    e.stopPropagation(); openFocus('board', g.dataset.focus);
+  }));
+  list.querySelectorAll('[data-undo]').forEach(u=>u.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    const b=state.boards.find(x=>x.id===u.dataset.undo);
+    if(b && b.filled>0){ b.filled--; saveData(); renderBoards(); }
+  }));
+  list.querySelectorAll('[data-boardmenu]').forEach(b=>b.addEventListener('click',(e)=>{
+    e.stopPropagation(); openBoardMenu(b.dataset.boardmenu);
+  }));
+  // tap an empty circle to drop a token in
+  list.querySelectorAll('[data-tokfill]').forEach(circle=>{
+    circle.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const b=state.boards.find(x=>x.id===circle.dataset.tokfill);
+      if(b) giveToken(b, circle);
+    });
+  });
+}
+
+function giveToken(b, sourceEl){
+  if(!b || b.filled>=b.size) return;
+  b.filled++;
+  if(sourceEl) burst(sourceEl, 10);
+  pushEvent(b.tokenEmoji||'⭐', `Token earned: ${b.goal}`);
+  if(b.filled>=b.size){
+    if(sourceEl) burst(sourceEl, 34);
+    pushEvent('🌸', `Board complete: ${b.reward}!`);
+    const banner=document.getElementById('celebrateBanner');
+    if(banner){
+      banner.textContent = state.ageMode==='young'
+        ? `🌸 ${b.rewardEmoji||''} All done! Time for ${b.reward}!`
+        : `Board complete! Time for ${b.reward}. Board will reset.`;
+      banner.classList.add('show');
+      setTimeout(()=>{ b.filled=0; banner.classList.remove('show'); saveData(); renderBoards(); }, 2600);
+    }
+  }
+  saveData(); renderBoards();
+}
+
+/* VISUALS */
+const EMOJI_CHOICES=['🎒','🍎','📚','🧸','🦷','📖','🛏️','🧦','🚿','🍽️','🚗','🏫','🎨','⚽','🧩','🎵'];
+function editSchedule(sid){
+  const s=state.schedules.find(x=>x.id===sid); if(!s) return;
+  openSheet('Edit schedule', `
+    <div class="sheet-field">
+      <label class="sheet-label">Schedule name</label>
+      <input class="sheet-input" id="esTitle" value="${escapeAttr(s.title)}" autocomplete="off">
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-btn danger" id="esDelete">Delete</button>
+      <button class="sheet-btn primary" id="esSave">Save</button>
+    </div>
+  `);
+  document.getElementById('esSave').addEventListener('click',()=>{
+    const v=document.getElementById('esTitle').value.trim();
+    if(v){ s.title=v; saveData(); renderAll(); closeSheet(); }
+  });
+  document.getElementById('esDelete').addEventListener('click',()=>{
+    state.schedules = state.schedules.filter(x=>x.id!==sid); saveData(); renderAll(); closeSheet();
+  });
+  setTimeout(()=>document.getElementById('esTitle').focus(),200);
+}
+
+function renderSchedules(){
+  const list=document.getElementById('scheduleList'); list.innerHTML='';
+  if(state.schedules.length===0){
+    list.innerHTML=`<div class="child-empty">
+      <svg width="64" height="64" viewBox="0 0 64 64">${bloomSVG(4,64)}</svg>
+      <div class="ce-title">Show what happens next</div>
+      <div class="ce-body">A visual schedule walks your child through their routine, one calm step at a time. Helpful for transitions.</div>
+      <button class="ce-btn" id="emptySchedBtn">Create a schedule</button>
+    </div>`;
+    document.getElementById('emptySchedBtn').addEventListener('click',()=>document.getElementById('addScheduleBtn').click());
+    return;
+  }
+  state.schedules.forEach(s=>{
+    const card=document.createElement('div'); card.className='schedule-card';
+    const row=s.steps.map((st,i)=>`
+      <button type="button" class="visual-card ${st.done?'done':''}" data-sid="${s.id}" data-idx="${i}" aria-pressed="${st.done}" aria-label="${escapeAttr(st.label)}">
+        <div class="visual-emoji">${escapeHtml(st.emoji)}</div>
+        <div class="visual-label">${escapeHtml(st.label)}</div>
+      </button>
+      ${i<s.steps.length-1?'<div class="visual-arrow">→</div>':''}
+    `).join('');
+    card.innerHTML=`<div class="schedule-head">
+        <button type="button" class="schedule-title" data-focus="${s.id}">${escapeHtml(s.title)}</button>
+        <button class="row-edit" data-editsched="${s.id}" aria-label="Edit schedule">⋯</button>
+      </div>
+      <div class="visual-row">${row}</div>
+      <button type="button" class="board-open-hint" data-focus="${s.id}">tap to open full screen ↗</button>`;
+    list.appendChild(card);
+  });
+  list.querySelectorAll('[data-focus]').forEach(t=>{
+    t.addEventListener('click',()=>openFocus('schedule', t.dataset.focus));
+  });
+  list.querySelectorAll('[data-editsched]').forEach(b=>b.addEventListener('click',(e)=>{
+    e.stopPropagation(); editSchedule(b.dataset.editsched);
+  }));
+  list.querySelectorAll('.visual-card').forEach(vc=>{
+    vc.addEventListener('click',()=>{
+      const s=state.schedules.find(x=>x.id===vc.dataset.sid);
+      s.steps[vc.dataset.idx].done=!s.steps[vc.dataset.idx].done;
+      saveData(); renderSchedules();
+    });
+  });
+}
+
+/* SHARE */
+function openWeeklyReflectionSheet(){
+  const current=state.weeklyReflection && state.weeklyReflection.week===weekStartStr() ? state.weeklyReflection.takeaway||'' : '';
+  openSheet('One small takeaway', `
+    <div class="sheet-sub">Keep a simple thought for next week. This is for your family, not part of a clinical record.</div>
+    <div class="sheet-field"><label class="sheet-label" for="weeklyTakeawayInput">What would you like to carry into next week?</label><textarea class="sheet-input" id="weeklyTakeawayInput" rows="4" maxlength="280" placeholder="e.g. A quiet space seemed to make breaks easier."></textarea></div>
+    <div class="sheet-actions"><button class="sheet-btn ghost" onclick="closeSheet()">Cancel</button><button class="sheet-btn primary" id="saveWeeklyTakeaway">Save takeaway</button></div>
+  `);
+  const input=document.getElementById('weeklyTakeawayInput'); input.value=current;
+  document.getElementById('saveWeeklyTakeaway').addEventListener('click',()=>{
+    state.weeklyReflection={week:weekStartStr(), takeaway:input.value.trim()};
+    saveData(); renderWeeklyReflection(); closeSheet(); showToast(input.value.trim()?'Weekly takeaway saved.':'Weekly takeaway cleared.');
+  });
+  setTimeout(()=>input.focus(),200);
+}
+function openWeeklyFocusSheet(){
+  if(!state.targets.length){ showToast('Add a moment before setting a weekly focus.'); return; }
+  const existing=currentWeeklyFocus();
+  const defaultTarget=existing?.targetId || weeklyFocusDefaultTarget()?.id || '';
+  const reflection=state.weeklyReflection && state.weeklyReflection.week===weekStartStr() ? state.weeklyReflection.takeaway||'' : '';
+  openSheet(existing?'Edit this week’s focus':'Choose this week’s focus', `
+    <div class="sheet-sub">Choose one small thing to keep in mind. You can change or clear it anytime.</div>
+    <div class="sheet-field"><label class="sheet-label" for="weeklyFocusTarget">A moment to focus on</label><select class="sheet-select" id="weeklyFocusTarget">${state.targets.map(target=>`<option value="${escapeAttr(target.id)}" ${target.id===defaultTarget?'selected':''}>${escapeHtml(target.name)}</option>`).join('')}</select></div>
+    <div class="sheet-field"><label class="sheet-label">A support to try <span class="sheet-hint">Optional</span></label><div class="context-chip-grid" id="weeklyFocusHelp">${HELP_OPTIONS.map(([value,label])=>`<button type="button" class="context-chip" data-focus-help="${value}" aria-pressed="${existing?.help===value}">${label}</button>`).join('')}</div></div>
+    <div class="sheet-field"><label class="sheet-label" for="weeklyFocusNote">Your small intention <span class="sheet-hint">Optional</span></label><textarea class="sheet-input" id="weeklyFocusNote" rows="3" maxlength="280" placeholder="What would you like to try this week?"></textarea></div>
+    <div class="sheet-actions">${existing?'<button class="sheet-btn danger" id="clearWeeklyFocus">Clear focus</button>':''}<button class="sheet-btn ghost" onclick="closeSheet()">Cancel</button><button class="sheet-btn primary" id="saveWeeklyFocus">Save focus</button></div>
+  `);
+  const body=document.getElementById('sheetBody');
+  const note=body.querySelector('#weeklyFocusNote'); note.value=existing?.note||reflection;
+  let selectedHelp=existing?.help||'';
+  body.querySelectorAll('[data-focus-help]').forEach(button=>button.addEventListener('click',()=>{
+    selectedHelp=selectedHelp===button.dataset.focusHelp ? '' : button.dataset.focusHelp;
+    body.querySelectorAll('[data-focus-help]').forEach(item=>item.setAttribute('aria-pressed',String(item.dataset.focusHelp===selectedHelp)));
+  }));
+  body.querySelector('#saveWeeklyFocus').addEventListener('click',()=>{
+    const nextFocus={week:weekStartStr(), targetId:body.querySelector('#weeklyFocusTarget').value, help:selectedHelp, note:note.value.trim()};
+    const index=state.weeklyFocuses.findIndex(focus=>focus.week===nextFocus.week);
+    if(index>=0) state.weeklyFocuses[index]={...state.weeklyFocuses[index],...nextFocus};
+    else state.weeklyFocuses=[...state.weeklyFocuses,nextFocus].slice(-12);
+    state.weeklyFocus=nextFocus;
+    saveData(); renderWeeklyFocus(); renderWeeklyReflection(); closeSheet(); showToast('This week’s focus is ready.');
+  });
+  const clear=body.querySelector('#clearWeeklyFocus');
+  if(clear) clear.addEventListener('click',()=>{ state.weeklyFocuses=state.weeklyFocuses.filter(focus=>focus.week!==weekStartStr()); state.weeklyFocus=null; saveData(); renderWeeklyFocus(); renderWeeklyReflection(); closeSheet(); showToast('Weekly focus cleared.'); });
+}
+function openFocusReviewNote(focus){
+  openSheet('Add a note', `
+    <div class="sheet-sub">Optional: what would you like to remember about this focus?</div>
+    <div class="sheet-field"><label class="sheet-label" for="focusReviewNote">A note for your family</label><textarea class="sheet-input" id="focusReviewNote" rows="4" maxlength="280" placeholder="What did you notice?"></textarea></div>
+    <div class="sheet-actions"><button class="sheet-btn ghost" onclick="closeSheet()">Cancel</button><button class="sheet-btn primary" id="saveFocusReviewNote">Save note</button></div>
+  `);
+  const input=document.getElementById('focusReviewNote'); input.value=focus.review?.note||'';
+  document.getElementById('saveFocusReviewNote').addEventListener('click',()=>{
+    focus.review={...focus.review,note:input.value.trim()};
+    saveData(); renderWeeklyReflection(); closeSheet(); showToast('Check-in note saved.');
+  });
+  setTimeout(()=>input.focus(),200);
+}
+function recordFocusReview(week, outcome){
+  const focus=state.weeklyFocuses.find(item=>item.week===week); if(!focus) return;
+  focus.review={outcome, reviewedAt:Date.now(), note:''};
+  saveData(); renderWeeklyReflection();
+  showToast('Check-in saved.');
+}
+function renderWeeklyReflection(){
+  const section=document.getElementById('weeklyReflection'); if(!section) return;
+  const cutoff=todayStr(-6);
+  const observations=state.observations.filter(observation=>observation.day>=cutoff && observation.day<=todayStr());
+  const totalMoments=state.targets.reduce((sum,target)=>sum+weekFor(target.id),0);
+  const activeDays=new Set();
+  state.targets.forEach(target=>{ for(let i=0;i<7;i++){ if(countFor(target.id,todayStr(-i))>0) activeDays.add(todayStr(-i)); } });
+  const helpCounts={};
+  observations.forEach(observation=>(observation.help||[]).forEach(help=>helpCounts[help]=(helpCounts[help]||0)+1));
+  const topHelp=Object.entries(helpCounts).sort((a,b)=>b[1]-a[1])[0];
+  const targetCounts=state.targets.map(target=>[target,weekFor(target.id)]).filter(([,count])=>count>0).sort((a,b)=>b[1]-a[1]);
+  const topTarget=targetCounts[0];
+  const takeaway=state.weeklyReflection && state.weeklyReflection.week===weekStartStr() ? state.weeklyReflection.takeaway||'' : '';
+  const focus=currentWeeklyFocus();
+  const pendingReview=pendingFocusReview();
+  const recentReview=mostRecentFocusReview();
+  const previewReview=!pendingReview && focus && previewFocusReviewWeek===focus.week ? focus : null;
+  const dayWord=activeDays.size===1?'day':'days';
+  const momentWord=totalMoments===1?'moment':'moments';
+  const supportText=topHelp ? `${helpLabel(topHelp[0])} was a support you noted in ${topHelp[1]} ${topHelp[1]===1?'moment':'moments'}.` : totalMoments ? 'Add “what helped?” after a moment to notice patterns over time.' : 'Your first few observations will become a helpful picture over time.';
+  const momentText=topTarget ? `${topTarget[0].name} was the moment you noticed most this week.` : '';
+  const reviewFocus=pendingReview||previewReview;
+  const reviewMarkup=reviewFocus?`<div class="weekly-focus-review"><div class="weekly-focus-review-title">${previewReview?'Preview · a quick look back':'A quick look back'}</div><div class="weekly-focus-review-copy">${previewReview?'At the end of this week, Bloom will ask: ':'Last week you tried '}<strong>${escapeHtml(focusPlanText(reviewFocus))}</strong>. Did it feel helpful?</div><div class="weekly-focus-review-actions"><button type="button" ${previewReview?'data-preview-review':'data-focus-review="helpful" data-review-week="'+reviewFocus.week+'"'}>Helpful</button><button type="button" ${previewReview?'data-preview-review':'data-focus-review="sometimes" data-review-week="'+reviewFocus.week+'"'}>Sometimes</button><button type="button" ${previewReview?'data-preview-review':'data-focus-review="not_sure" data-review-week="'+reviewFocus.week+'"'}>Not sure</button></div></div>`:recentReview?`<div class="weekly-focus-review-done"><span>Last week’s focus: <strong>${escapeHtml(recentReview.review.outcome==='helpful'?'Helpful':recentReview.review.outcome==='sometimes'?'Sometimes':'Not sure')}</strong>${recentReview.review.note?` · ${escapeHtml(recentReview.review.note)}`:''}</span><button type="button" data-review-note-week="${recentReview.week}">${recentReview.review.note?'Edit note':'Add note'}</button></div>`:'';
+  const previewControl=focus&&!pendingReview?`<button type="button" class="weekly-reflection-focus" id="reviewPreviewBtn">${previewReview?'Close check-in preview':'Preview end-of-week check-in'} →</button>`:'';
+  section.innerHTML=`<div class="weekly-reflection-head"><div class="weekly-reflection-title" id="weeklyReflectionTitle">A gentle weekly reflection</div><div class="weekly-reflection-range">Last 7 days</div></div>
+    <div class="weekly-reflection-summary">${totalMoments?`You noticed ${totalMoments} ${momentWord} across ${activeDays.size} ${dayWord}.`:'A quiet place to notice what is working, one small moment at a time.'}</div>
+    <div class="weekly-reflection-insight"><span class="mark">✦</span><span>${escapeHtml(supportText)}</span></div>
+    ${momentText?`<div class="weekly-reflection-insight"><span class="mark">✦</span><span>${escapeHtml(momentText)}</span></div>`:''}
+    ${reviewMarkup}
+    <button type="button" class="weekly-reflection-takeaway ${takeaway?'':'empty'}" id="weeklyTakeawayBtn"><span class="label">${takeaway?'Your takeaway for next week':'Keep one thought for next week'}</span>${takeaway?escapeHtml(takeaway):'+ Save a small takeaway'}</button>
+    <button type="button" class="weekly-reflection-focus" id="weeklyFocusBtn">${focus?'Edit this week’s focus':'Choose this week’s focus'} →</button>${previewControl}`;
+  document.getElementById('weeklyTakeawayBtn').addEventListener('click',openWeeklyReflectionSheet);
+  document.getElementById('weeklyFocusBtn').addEventListener('click',openWeeklyFocusSheet);
+  section.querySelectorAll('[data-focus-review]').forEach(button=>button.addEventListener('click',()=>recordFocusReview(button.dataset.reviewWeek,button.dataset.focusReview)));
+  section.querySelectorAll('[data-review-note-week]').forEach(button=>{ const reviewed=state.weeklyFocuses.find(focus=>focus.week===button.dataset.reviewNoteWeek); button.addEventListener('click',()=>openFocusReviewNote(reviewed)); });
+  const previewButton=document.getElementById('reviewPreviewBtn');
+  if(previewButton) previewButton.addEventListener('click',()=>{ previewFocusReviewWeek=previewReview?null:focus.week; renderWeeklyReflection(); });
+  section.querySelectorAll('[data-preview-review]').forEach(button=>button.addEventListener('click',()=>showToast('Preview only — your actual check-in appears next week.')));
+}
+function renderShare(){
+  const name = (state.childName && state.childName!=='your family') ? state.childName : 'your child';
+  const titleEl=document.getElementById('poTitle');
+  if(titleEl) titleEl.textContent = `How ${name==='your child'?'your child':name}\u2019s doing`;
+
+  // top stats
+  let moments=0; const activeDays=new Set();
+  state.targets.forEach(t=>{
+    const e=state.entries[t.id]||{};
+    Object.keys(e).forEach(d=>{ if(e[d]>0){ moments+=e[d]; activeDays.add(d); } });
+  });
+  const statsEl=document.getElementById('poStats');
+  if(statsEl){
+    statsEl.innerHTML=`
+      <div class="s"><div class="n">${moments}</div><div class="l">moments logged</div></div>
+      <div class="s"><div class="n">${activeDays.size}</div><div class="l">active days</div></div>
+      <div class="s"><div class="n">${state.targets.length}</div><div class="l">moments noticed</div></div>`;
+  }
+  renderWeeklyReflection();
+
+  // each skill: bloom + name + warm status + 7-day dots
+  const skillsEl=document.getElementById('poSkills');
+  if(skillsEl){
+    if(state.targets.length===0){
+      skillsEl.innerHTML=`<div class="child-empty" style="padding:20px 16px;">
+        <svg width="56" height="56" viewBox="0 0 56 56">${bloomSVG(3,56)}</svg>
+        <div class="ce-title">Progress grows here</div>
+        <div class="ce-body">Once you start noticing moments on the Home screen, you'll see each one bloom and grow over time.</div>
+      </div>`;
+    } else {
+      skillsEl.innerHTML=state.targets.map(t=>{
+        const streak=streakFor(t.id);
+        // status words
+        let status;
+        if(streak>=6) status='Going strong · '+streak+' days in a row';
+        else if(streak>=3) status='Building nicely · '+streak+' days in a row';
+        else if(streak>=1) status=streak+'-day streak';
+        else if(weekFor(t.id)>0) status='Getting started';
+        else status='No moments yet this week';
+        // last 7 days dots (oldest left -> today right)
+        let dots='';
+        for(let i=6;i>=0;i--){
+          const has=countFor(t.id, todayStr(-i))>0;
+          dots+=`<span class="po-dot ${has?'full':'empty'}"></span>`;
+        }
+        return `<button type="button" class="po-skill" data-skill="${t.id}">
+          <svg class="mini" viewBox="0 0 40 40">${bloomSVG(streak,40)}</svg>
+          <div class="info"><div class="nm">${escapeHtml(t.name)}</div><div class="st">${escapeHtml(status)}</div></div>
+          <div class="po-dots">${dots}</div>
+          <span class="po-chevron">›</span>
+        </button>`;
+      }).join('');
+      skillsEl.querySelectorAll('[data-skill]').forEach(el=>{
+        el.addEventListener('click',()=>openSkillDetail(el.dataset.skill));
+      });
+    }
+  }
+
+  // reward boards
+  const wrap=document.getElementById('poBoardsWrap');
+  const boardsEl=document.getElementById('poBoards');
+  if(wrap && boardsEl){
+    if(state.boards.length){
+      wrap.style.display='';
+      boardsEl.innerHTML=state.boards.map(b=>`
+        <div class="po-board">
+          <div class="bg">${escapeHtml(b.goal)} <span>\u2192 ${escapeHtml(b.reward)}</span></div>
+          <div class="bn">${b.filled}/${b.size}</div>
+        </div>`).join('');
+    } else {
+      wrap.style.display='none';
+    }
+  }
+}
+
+/* TABS */
+let currentTab='home';
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>{ const active=s.id==='screen-'+name; s.classList.toggle('active',active); s.hidden=!active; });
+  document.querySelectorAll('.tabbar .tab').forEach(b=>{ const active=b.dataset.screen===name; b.classList.toggle('active',active); b.setAttribute('aria-selected',String(active)); });
+  if(name==='home') renderHome();
+  if(name==='progress'){
+    // always land on the overview
+    const det=document.getElementById('progDetail'), ov=document.getElementById('progOverview');
+    if(det) det.style.display='none';
+    if(ov) ov.style.display='';
+    renderShare();
+  }
+}
+document.querySelectorAll('.tabbar .tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    currentTab=btn.dataset.screen;
+    focus=null;
+    showScreen(currentTab);
+  });
+});
+document.querySelector('.tabbar').addEventListener('keydown',(e)=>{
+  if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) return;
+  const tabs=[...document.querySelectorAll('.tabbar .tab')];
+  const index=tabs.indexOf(document.activeElement); if(index<0) return;
+  e.preventDefault();
+  const next=e.key==='Home'?0:e.key==='End'?tabs.length-1:(index+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+  tabs[next].focus(); tabs[next].click();
+});
+document.querySelectorAll('.quick-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    currentTab=btn.dataset.go;
+    focus=null;
+    showScreen(currentTab);
+  });
+});
+
+/* FOCUS MODE */
+let focus=null;
+function openFocus(type,id){
+  focus={type,id,from:currentTab};
+  showScreen('focus');
+  renderFocus();
+}
+document.getElementById('focusBack').addEventListener('click',()=>{
+  const from=focus?focus.from:'log';
+  focus=null;
+  showScreen(from);
+});
+document.getElementById('progDetailBack').addEventListener('click',backToOverview);
+function renderFocus(){
+  if(!focus) return;
+  const wrap=document.getElementById('focusContent');
+  if(focus.type==='board'){
+    const b=state.boards.find(x=>x.id===focus.id);
+    if(!b){ wrap.innerHTML=''; return; }
+    const tok=b.tokenEmoji||'⭐';
+    const done=b.filled>=b.size;
+    let tokens='';
+    for(let i=0;i<b.size;i++){
+      const isNext = (i===b.filled) && !done;
+      tokens+=isNext
+        ? `<button type="button" class="token focus next" data-place="1" aria-label="Add token"><span></span></button>`
+        : `<div class="token focus ${i<b.filled?'filled':''}"><span>${i<b.filled?escapeHtml(tok):''}</span></div>`;
+    }
+    wrap.innerHTML=`
+      <div class="focus-title">${escapeHtml(b.goal)}</div>
+      <div class="child-prompt">${done?'You did it! 🌸':'Tap to add your token'}</div>
+      <div class="token-flow">${tokens}<span class="flow-arrow">&#10132;</span>
+        <div class="reward-tile focus ${b.rewardPhoto?'has-photo':''} ${done?'won':''}">
+          ${rewardTileInner(b)}
+        </div>
+      </div>
+      <button class="parent-undo" id="fUndo">undo last token</button>`;
+    const placeToken=function(el){
+      if(b.filled<b.size){
+        b.filled++;
+        if(el) burst(el,14);
+        pushEvent(b.tokenEmoji||'⭐', `Token earned: ${b.goal}`);
+        if(b.filled>=b.size){
+          if(el) burst(el,40);
+          pushEvent('🌸', `Board complete: ${b.reward}!`);
+          const ban=document.getElementById('focusCelebrate');
+          ban.textContent = `🌸 ${b.rewardEmoji||''} All done! Time for ${b.reward}!`;
+          ban.classList.add('show');
+          setTimeout(()=>{ b.filled=0; ban.classList.remove('show'); saveData(); renderFocus(); renderBoards(); }, 2600);
+        }
+        saveData(); renderFocus(); renderBoards(); renderShare();
+      }
+    };
+    const nextTok=wrap.querySelector('[data-place]');
+    if(nextTok) nextTok.addEventListener('click',function(){ placeToken(this); });
+    document.getElementById('fUndo').addEventListener('click',()=>{
+      if(b.filled>0){ b.filled--; saveData(); renderFocus(); renderBoards(); renderShare(); }
+    });
+  } else {
+    const s=state.schedules.find(x=>x.id===focus.id);
+    if(!s){ wrap.innerHTML=''; return; }
+    const row=s.steps.map((st,i)=>`
+      <button type="button" class="visual-card big ${st.done?'done':''}" data-idx="${i}" aria-pressed="${st.done}" aria-label="${escapeAttr(st.label)}">
+        <div class="visual-emoji">${escapeHtml(st.emoji)}</div>
+        <div class="visual-label">${escapeHtml(st.label)}</div>
+      </button>
+      ${i<s.steps.length-1?'<div class="visual-arrow down">&#8595;</div>':''}
+    `).join('');
+    wrap.innerHTML=`
+      <div class="focus-title">${escapeHtml(s.title)}</div>
+      <div class="visual-col">${row}</div>
+      <div class="visual-tap-hint" style="text-align:center;">Tap a card when that step is done</div>`;
+    wrap.querySelectorAll('.visual-card').forEach(vc=>{
+      vc.addEventListener('click',()=>{
+        s.steps[vc.dataset.idx].done=!s.steps[vc.dataset.idx].done;
+        saveData(); renderFocus(); renderSchedules();
+      });
+    });
+  }
+}
+
+
+
+document.getElementById('addTargetBtn').addEventListener('click',()=>{
+  openSheet('Add something to notice', `
+    <div class="sheet-sub">What's an everyday moment you'd like to keep an eye on? You'll tap it each time it happens.</div>
+    <div class="sheet-field">
+      <input class="sheet-input" id="tfName" placeholder="e.g. Shares toys during play" autocomplete="off">
+      <div class="sheet-hint">Write it in your own words, whatever makes sense to you.</div>
+    </div>
+    <div class="sheet-field">
+      <label class="sheet-label">When does it usually happen?</label>
+      <div class="time-pick" id="tfTime">
+        <button type="button" class="time-opt" data-t="morning">Morning</button>
+        <button type="button" class="time-opt" data-t="afternoon">Afternoon</button>
+        <button type="button" class="time-opt" data-t="evening">Evening</button>
+        <button type="button" class="time-opt sel" data-t="anytime">Anytime</button>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-btn ghost" onclick="closeSheet()">Cancel</button>
+      <button class="sheet-btn primary" id="tfSave">Add it</button>
+    </div>
+  `);
+  let pickedTime='anytime';
+  document.querySelectorAll('#tfTime .time-opt').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#tfTime .time-opt').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel'); pickedTime=b.dataset.t;
+  }));
+  const save=()=>{
+    const name=document.getElementById('tfName').value.trim();
+    if(!name){ document.getElementById('tfName').focus(); return; }
+    state.targets.push({id:'t'+Date.now(), name, time:pickedTime});
+    saveData(); renderHome(); renderLog(); renderProgress(); renderShare(); closeSheet();
+  };
+  document.getElementById('tfSave').addEventListener('click',save);
+  const inp=document.getElementById('tfName');
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') save(); });
+  setTimeout(()=>inp.focus(),200);
+});
+
+document.getElementById('modeYoung').addEventListener('click',()=>{ state.ageMode='young'; saveData(); renderBoards(); });
+document.getElementById('modeOlder').addEventListener('click',()=>{ state.ageMode='older'; saveData(); renderBoards(); });
+
+function showChildSection(which){
+  const tokens=which==='tokens';
+  document.getElementById('secTokens').classList.toggle('on', tokens);
+  document.getElementById('secVisuals').classList.toggle('on', !tokens);
+  document.getElementById('tokensSection').style.display = tokens?'block':'none';
+  document.getElementById('visualsSection').style.display = tokens?'none':'block';
+}
+document.getElementById('secTokens').addEventListener('click',()=>showChildSection('tokens'));
+document.getElementById('secVisuals').addEventListener('click',()=>showChildSection('visuals'));
+
+/* ===== IN-APP MODAL SHEET (replaces browser pop-ups) ===== */
+let sheetTrigger=null;
+function openSheet(title, bodyHTML){
+  sheetTrigger=document.activeElement;
+  document.getElementById('sheetTitle').textContent = title;
+  document.getElementById('sheetBody').innerHTML = bodyHTML;
+  const overlay=document.getElementById('sheetOverlay'); overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
+  setTimeout(()=>overlay.querySelector('input, button, [tabindex]')?.focus(),40);
+}
+function closeSheet(){ const overlay=document.getElementById('sheetOverlay'); overlay.classList.remove('open'); overlay.setAttribute('aria-hidden','true'); sheetTrigger?.focus?.(); }
+document.getElementById('sheetOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='sheetOverlay') closeSheet();
+});
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && document.getElementById('sheetOverlay').classList.contains('open')) closeSheet(); });
+document.addEventListener('keydown',(e)=>{
+  const overlay=document.getElementById('sheetOverlay');
+  if(e.key!=='Tab' || !overlay.classList.contains('open')) return;
+  const controls=[...overlay.querySelectorAll('button,input,[tabindex]:not([tabindex="-1"])')].filter(el=>!el.disabled);
+  if(!controls.length) return;
+  const first=controls[0], last=controls[controls.length-1];
+  if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+});
+
+const REWARD_EMOJI_CHOICES=['🛝','🎬','🍦','🧸','🎮','📱','🏊','🚲','🍕','🎨','⚽','🎁'];
+
+document.getElementById('addBoardBtn').addEventListener('click',openBoardForm);
+function openBoardForm(){
+  const tokenChoices=TOKEN_EMOJI_CHOICES.slice(0,8);
+  const sizes=[3,4,5,6,8,10,12];
+  openSheet('New token board', `
+    <div class="sheet-sub">Token boards help your child work toward something they love, one step at a time.</div>
+    <div class="sheet-field">
+      <label class="sheet-label">What are you working on?</label>
+      <input class="sheet-input" id="bfGoal" placeholder="e.g. Morning routine" autocomplete="off">
+      <div class="sheet-hint">A routine or skill you're building together.</div>
+    </div>
+    <div class="sheet-field">
+      <label class="sheet-label">What's the reward?</label>
+      <input class="sheet-input" id="bfReward" placeholder="e.g. Trip to the park" autocomplete="off">
+      <div class="sheet-hint">Something your child is excited to earn.</div>
+    </div>
+    <div class="sheet-field">
+      <label class="sheet-label">How many tokens to fill the board?</label>
+      <div class="size-pick" id="bfSizes">${sizes.map((s,i)=>`<button type="button" class="size-opt ${s===5?'on':''}" data-size="${s}">${s}</button>`).join('')}</div>
+      <div class="sheet-hint">Fewer tokens = quicker wins. Five is a nice start.</div>
+    </div>
+    <div class="sheet-field">
+      <label class="sheet-label">Pick a token</label>
+      <div class="emoji-pick" id="bfTokens">${tokenChoices.map((e,i)=>`<button type="button" class="emoji-opt ${i===0?'on':''}" data-emoji="${e}">${e}</button>`).join('')}</div>
+    </div>
+    <div class="sheet-field">
+      <label class="sheet-label">Show the reward as</label>
+      <div class="emoji-pick" id="bfRewardEmoji">
+        <button type="button" class="emoji-opt photo-opt" id="bfPhotoOpt" title="Use a photo">📷</button>
+        ${REWARD_EMOJI_CHOICES.map((e,i)=>`<button type="button" class="emoji-opt ${i===0?'on':''}" data-remoji="${e}">${e}</button>`).join('')}
+      </div>
+      <div class="sheet-hint">Tap 📷 to use a real photo of the reward, or pick a picture.</div>
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-btn ghost" onclick="closeSheet()">Cancel</button>
+      <button class="sheet-btn primary" id="bfSave">Create board</button>
+    </div>
+  `);
+  // wire selections
+  let sel={size:5, token:TOKEN_EMOJI_CHOICES[0], remoji:REWARD_EMOJI_CHOICES[0], photo:null};
+  const body=document.getElementById('sheetBody');
+  body.querySelectorAll('[data-size]').forEach(el=>el.addEventListener('click',()=>{
+    body.querySelectorAll('[data-size]').forEach(x=>x.classList.remove('on')); el.classList.add('on'); sel.size=+el.dataset.size;
+  }));
+  body.querySelectorAll('[data-emoji]').forEach(el=>el.addEventListener('click',()=>{
+    body.querySelectorAll('[data-emoji]').forEach(x=>x.classList.remove('on')); el.classList.add('on'); sel.token=el.dataset.emoji;
+  }));
+  body.querySelectorAll('[data-remoji]').forEach(el=>el.addEventListener('click',()=>{
+    body.querySelectorAll('[data-remoji],.photo-opt').forEach(x=>x.classList.remove('on')); el.classList.add('on'); sel.remoji=el.dataset.remoji; sel.photo=null;
+  }));
+  document.getElementById('bfPhotoOpt').addEventListener('click',()=>{
+    const input=document.getElementById('rewardPhotoInput');
+    input.value=''; input.onchange=function(){
+      const file=input.files&&input.files[0]; if(!file) return;
+      const reader=new FileReader();
+      reader.onload=e=>{ sel.photo=e.target.result;
+        body.querySelectorAll('[data-remoji],.photo-opt').forEach(x=>x.classList.remove('on'));
+        document.getElementById('bfPhotoOpt').classList.add('on');
+        document.getElementById('bfPhotoOpt').textContent='✓';
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  });
+  document.getElementById('bfSave').addEventListener('click',()=>{
+    const goal=document.getElementById('bfGoal').value.trim();
+    if(!goal){ document.getElementById('bfGoal').focus(); return; }
+    const reward=document.getElementById('bfReward').value.trim()||'a reward';
+    state.boards.push({id:'b'+Date.now(), goal, reward, rewardEmoji: sel.photo?'':sel.remoji, size: sel.size, filled:0, tokenEmoji: sel.token, rewardPhoto: sel.photo});
+    saveData(); renderBoards(); renderShare(); closeSheet();
+  });
+  setTimeout(()=>{ const g=document.getElementById('bfGoal'); if(g) g.focus(); }, 200);
+}
+function finishBoard(goal,reward,rewardEmoji,size,tokenEmoji,rewardPhoto){
+  state.boards.push({id:'b'+Date.now(), goal, reward, rewardEmoji, size, filled:0, tokenEmoji, rewardPhoto});
+  saveData(); renderBoards(); renderShare();
+}
+
+document.getElementById('addScheduleBtn').addEventListener('click',openScheduleForm);
+function openScheduleForm(){
+  const iconChoices=EMOJI_CHOICES.slice(0,10);
+  openSheet('New visual schedule', `
+    <div class="sheet-sub">Break a routine into simple picture steps your child can follow one at a time.</div>
+    <div class="sheet-field">
+      <label class="sheet-label">Schedule name</label>
+      <input class="sheet-input" id="sfTitle" placeholder="e.g. Bedtime routine" autocomplete="off">
+    </div>
+    <div class="sheet-field">
+      <label class="sheet-label">Steps</label>
+      <div class="sheet-steps" id="sfSteps"></div>
+      <div class="sheet-hint" id="sfEmptyHint">Add your first step below.</div>
+    </div>
+    <div class="sheet-field">
+      <div class="emoji-pick" id="sfIcons">${iconChoices.map((e,i)=>`<button type="button" class="emoji-opt ${i===0?'on':''}" data-icon="${e}">${e}</button>`).join('')}</div>
+      <input class="sheet-input" id="sfStepLabel" placeholder="Step name, e.g. Brush teeth" autocomplete="off" style="margin-top:9px;">
+      <button class="sheet-btn ghost" id="sfAddStep" style="margin-top:9px;">+ Add this step</button>
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-btn ghost" onclick="closeSheet()">Cancel</button>
+      <button class="sheet-btn primary" id="sfSave">Create schedule</button>
+    </div>
+  `);
+  const steps=[]; let icon=EMOJI_CHOICES[0];
+  const body=document.getElementById('sheetBody');
+  const stepsEl=document.getElementById('sfSteps');
+  const hint=document.getElementById('sfEmptyHint');
+  function redraw(){
+    stepsEl.innerHTML=steps.map((s,i)=>`<div class="sheet-step-row"><span class="se">${s.emoji}</span><span class="sl">${s.label}</span><button class="sx" data-rm="${i}">✕</button></div>`).join('');
+    hint.style.display = steps.length?'none':'block';
+    stepsEl.querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click',()=>{ steps.splice(+b.dataset.rm,1); redraw(); }));
+  }
+  body.querySelectorAll('[data-icon]').forEach(el=>el.addEventListener('click',()=>{
+    body.querySelectorAll('[data-icon]').forEach(x=>x.classList.remove('on')); el.classList.add('on'); icon=el.dataset.icon;
+  }));
+  function addStep(){
+    const label=document.getElementById('sfStepLabel').value.trim();
+    if(!label) return;
+    steps.push({emoji:icon, label, done:false});
+    document.getElementById('sfStepLabel').value='';
+    redraw();
+    document.getElementById('sfStepLabel').focus();
+  }
+  document.getElementById('sfAddStep').addEventListener('click',addStep);
+  document.getElementById('sfStepLabel').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); addStep(); } });
+  document.getElementById('sfSave').addEventListener('click',()=>{
+    const title=document.getElementById('sfTitle').value.trim();
+    if(!title){ document.getElementById('sfTitle').focus(); return; }
+    if(steps.length===0){ document.getElementById('sfStepLabel').focus(); return; }
+    state.schedules.push({id:'s'+Date.now(), title, steps});
+    saveData(); renderSchedules(); closeSheet();
+  });
+  setTimeout(()=>document.getElementById('sfTitle').focus(),200);
+}
+
+function buildSummaryDoc(){
+  const child = activeChild();
+  const name = child.name && child.name!=='your family' ? child.name : 'Child';
+  const skillRows = state.targets.map(t=>{
+    return `<tr><td>${escapeHtml(t.name)}</td><td style="text-align:center">${activeDays(t.id,14)} days</td><td style="text-align:right">${weekFor(t.id)}</td><td style="text-align:right">${totalFor(t.id)}</td></tr>`;
+  }).join('');
+  const boardRows = state.boards.map(b=>`<tr><td>${escapeHtml(b.goal)}</td><td>toward ${escapeHtml(b.reward)}</td><td style="text-align:right">${b.filled}/${b.size}</td></tr>`).join('');
+  const totalMoments = state.targets.reduce((s,t)=>s+totalFor(t.id),0);
+  const activeDayset = new Set();
+  state.targets.forEach(t=>{ Object.keys(state.entries[t.id]||{}).forEach(d=>{ if((state.entries[t.id][d]||0)>0) activeDayset.add(d); }); });
+  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(name)}'s Bloom summary</title>
+  <style>
+    body{font-family:-apple-system,Segoe UI,Roboto,sans-serif; background:#FDFBF8; color:#1E1A1A; margin:0; padding:28px 20px; max-width:640px; margin:0 auto;}
+    h1{font-size:22px; color:#3D0A16; margin:0 0 2px;}
+    .sub{color:#7A6F6F; font-size:13px; margin-bottom:20px;}
+    .stats{display:flex; gap:10px; margin-bottom:22px;}
+    .stat{flex:1; background:#F5EAE8; border-radius:12px; padding:13px; text-align:center;}
+    .stat .n{font-size:22px; color:#3D0A16; font-weight:700;}
+    .stat .l{font-size:11px; color:#7A6F6F;}
+    h2{font-size:13px; text-transform:uppercase; letter-spacing:0.05em; color:#7A6F6F; margin:22px 0 8px;}
+    table{width:100%; border-collapse:collapse; background:#fff; border:1px solid #EDD8D5; border-radius:12px; overflow:hidden;}
+    th,td{padding:10px 13px; font-size:13px; border-bottom:1px solid #F0E6E3; text-align:left;}
+    th{background:#F5EAE8; color:#6B1224; font-size:11px; text-transform:uppercase; letter-spacing:0.04em;}
+    tr:last-child td{border-bottom:none;}
+    .note{margin-top:22px; padding:13px 16px; background:#F5EAE8; border-radius:11px; font-size:12px; color:#7A6F6F; line-height:1.55;}
+    .brand{margin-top:24px; text-align:center; color:#C4556A; font-size:13px;}
+    @media print{ body{background:#fff;} }
+  </style></head><body>
+    <h1>${escapeHtml(name)}'s summary</h1>
+    <div class="sub">Last 14 days &middot; parent-recorded observations from home</div>
+    <div class="stats">
+      <div class="stat"><div class="n">${totalMoments}</div><div class="l">moments logged</div></div>
+      <div class="stat"><div class="n">${activeDayset.size}</div><div class="l">active days</div></div>
+      <div class="stat"><div class="n">${state.targets.length}</div><div class="l">moments noticed</div></div>
+    </div>
+    <h2>Moments noticed</h2>
+    <table><tr><th>Moment</th><th style="text-align:center">Days noticed</th><th style="text-align:right">This week</th><th style="text-align:right">Total</th></tr>${skillRows||'<tr><td colspan=4>No moments yet</td></tr>'}</table>
+    ${state.boards.length?`<h2>Token boards</h2><table><tr><th>Goal</th><th>Reward</th><th style="text-align:right">Progress</th></tr>${boardRows}</table>`:''}
+    <div class="note">This home observation summary was created by ${escapeHtml(name)}'s family. It is not a clinical assessment, diagnosis, or treatment record.</div>
+    <div class="brand">🌸 made with bloom</div>
+  </body></html>`;
+  return { name, doc };
+}
+function downloadSummary(){
+  const { name, doc } = buildSummaryDoc();
+  const blob=new Blob([doc],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`${name}-bloom-summary.html`; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+function emailSummary(){
+  const { name } = buildSummaryDoc();
+  // Browsers cannot attach local files to a mailto draft. This is the brief recap;
+  // the parent can attach the downloaded full summary in their email app.
+  const lines = state.targets.map(t=>`- ${t.name}: ${streakFor(t.id)}-day streak, ${weekFor(t.id)} this week`);
+  const body = `Hi,\n\nHere's a short recap of what we've been noticing at home with ${name} over the last two weeks:\n\n${lines.join('\n')}\n\nI have a fuller Bloom home summary file ready to attach if helpful.\n\nThank you.`;
+  const subject = `${name}'s home observation summary from Bloom`;
+  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+function openEmailPrep(){
+  openSheet('Email your summary', `
+    <div class="sheet-sub">Bloom will save the full summary to your device, then open your usual email app with a short recap ready to edit.</div>
+    <div class="note-box"><b>One small step remains:</b> add a recipient and, if you want to send the full visual summary, attach the file from your Downloads folder. Nothing sends automatically.</div>
+    <div class="sheet-actions"><button class="sheet-btn ghost" onclick="openShareOptions()">Back</button><button class="sheet-btn primary" id="emailPrepContinue">Save file &amp; open email</button></div>
+  `);
+  document.getElementById('emailPrepContinue').addEventListener('click',()=>{
+    downloadSummary();
+    emailSummary();
+    closeSheet();
+  });
+}
+async function nativeShareSummary(){
+  const { name, doc } = buildSummaryDoc();
+  try{
+    const file = new File([doc], `${name}-bloom-summary.html`, {type:'text/html'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({ title:`${name}'s Bloom summary`, text:`A summary of what we've noticed at home with ${name}.`, files:[file] });
+      return;
+    }
+    if(navigator.share){
+      await navigator.share({ title:`${name}'s Bloom summary`, text:`A summary of what we've noticed at home with ${name}.` });
+      return;
+    }
+  }catch(e){ /* user cancelled or unsupported */ }
+  downloadSummary();
+}
+
+function openShareOptions(){
+  const hasNative = !!navigator.share;
+  openSheet('Share a home summary', `
+    <div class="sheet-sub">This parent-recorded home observation summary contains the items you just reviewed. Nothing is sent until you complete one of these options.</div>
+    ${hasNative?`
+    <button type="button" class="share-opt" id="soNative">
+      <span class="share-opt-ic">📲</span>
+      <div class="share-opt-tx"><div class="t">Share via my phone</div><div class="s">Text, WhatsApp, email, and more</div></div>
+      <span class="share-opt-ch">›</span>
+    </button>`:''}
+    <button type="button" class="share-opt" id="soEmail">
+      <span class="share-opt-ic">✉️</span>
+      <div class="share-opt-tx"><div class="t">Email the summary</div><div class="s">Save the file, then open an email draft</div></div>
+      <span class="share-opt-ch">›</span>
+    </button>
+    <button type="button" class="share-opt" id="soSave">
+      <span class="share-opt-ic">💾</span>
+      <div class="share-opt-tx"><div class="t">Save the file</div><div class="s">Keep it or print it later</div></div>
+      <span class="share-opt-ch">›</span>
+    </button>
+    <button class="sheet-btn ghost" style="width:100%; margin-top:8px;" onclick="closeSheet()">Cancel</button>
+  `);
+  const native=document.getElementById('soNative');
+  if(native) native.addEventListener('click',()=>{ closeSheet(); nativeShareSummary(); });
+  document.getElementById('soEmail').addEventListener('click',openEmailPrep);
+  document.getElementById('soSave').addEventListener('click',()=>{ closeSheet(); downloadSummary(); });
+}
+function openShareReview(){
+  const name = activeChild().name || 'your child';
+  const momentNames = state.targets.length
+    ? state.targets.map(t=>`<li>${escapeHtml(t.name)}</li>`).join('')
+    : '<li>No moments have been added.</li>';
+  const total = state.targets.reduce((sum,t)=>sum+totalFor(t.id),0);
+  openSheet('Review before sharing', `
+    <div class="sheet-sub">You are about to create a read-only 14-day home observation summary for ${escapeHtml(name)}. It is not a clinical report. Review what it includes before choosing a sharing method.</div>
+    <div class="note-box"><b>Included:</b> ${total} logged moments, active days, streaks and totals, plus token-board progress if you have boards.</div>
+    <div class="sheet-label" style="margin-top:16px;">Moments named in this summary</div>
+    <ul style="margin:0 0 8px 20px;font:13px/1.6 'Nunito',sans-serif;color:var(--brand-deep);">${momentNames}</ul>
+    <div class="sheet-hint">It does not include photos, visual schedules, or anything you have not logged. You stay in control of whether to continue.</div>
+    <div class="sheet-actions"><button class="sheet-btn ghost" onclick="closeSheet()">Cancel</button><button class="sheet-btn primary" id="shareReviewContinue">Next: sharing options</button></div>
+  `);
+  document.getElementById('shareReviewContinue').addEventListener('click',openShareOptions);
+}
+document.getElementById('shareBtn').addEventListener('click',openShareReview);
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s){ return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+/* ===== AMBIENT PETAL DRIFT ===== */
+(function(){
+  const canvas=document.getElementById('ambient');
+  const ctx=canvas.getContext('2d');
+  const phone=canvas.parentElement;
+  let W,H,petals=[],pointer={x:-999,y:-999,active:false};
+  function resize(){
+    W=canvas.width=phone.clientWidth;
+    H=canvas.height=phone.clientHeight;
+  }
+  resize(); window.addEventListener('resize',resize);
+  const N=3;
+  const COLORS=['rgba(196,85,106,0.13)','rgba(166,58,80,0.10)','rgba(139,26,47,0.08)'];
+  for(let i=0;i<N;i++){
+    petals.push({
+      x:Math.random()*375, y:Math.random()*800,
+      vx:(Math.random()-0.5)*0.2, vy:0.12+Math.random()*0.22,
+      rot:Math.random()*Math.PI*2, vr:(Math.random()-0.5)*0.012,
+      s:4+Math.random()*5, c:COLORS[i%COLORS.length],
+      sway:Math.random()*Math.PI*2,
+    });
+  }
+  function track(x,y){
+    const rect=phone.getBoundingClientRect();
+    pointer.x=x-rect.left; pointer.y=y-rect.top; pointer.active=true;
+  }
+  phone.addEventListener('mousemove',e=>track(e.clientX,e.clientY));
+  phone.addEventListener('mouseleave',()=>{pointer.active=false;});
+  phone.addEventListener('touchmove',e=>{const t=e.touches[0]; track(t.clientX,t.clientY);},{passive:true});
+  phone.addEventListener('touchend',()=>{pointer.active=false;});
+  function frame(){
+    // The everyday app stays still; the home screen gets only a faint sense of life.
+    const onboarding=document.getElementById('onboarding');
+    if(currentTab!=='home' || !onboarding.classList.contains('hidden') || document.hidden){
+      ctx.clearRect(0,0,W,H);
+      requestAnimationFrame(frame);
+      return;
+    }
+    ctx.clearRect(0,0,W,H);
+    petals.forEach(p=>{
+      if(pointer.active){
+        const dx=pointer.x-p.x, dy=pointer.y-p.y, d=Math.hypot(dx,dy);
+        if(d<120 && d>1){ p.vx+=dx/d*0.02; p.vy+=dy/d*0.02; p.vr+=0.002; }
+      }
+      p.sway+=0.012;
+      p.x+=p.vx+Math.sin(p.sway)*0.25;
+      p.y+=p.vy;
+      p.rot+=p.vr;
+      p.vx*=0.98; p.vy=Math.min(p.vy,1.2);
+      if(p.vy<0.12) p.vy+=0.004;
+      if(p.y>H+12){ p.y=-12; p.x=Math.random()*W; p.vy=0.12+Math.random()*0.22; }
+      if(p.x<-12) p.x=W+12; if(p.x>W+12) p.x=-12;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.c;
+      ctx.beginPath(); ctx.ellipse(0,0,p.s,p.s*0.55,0,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+    requestAnimationFrame(frame);
+  }
+  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches) frame();
+})();
+
+/* ===== ONBOARDING PETAL DRIFT ===== */
+(function(){
+  const canvas=document.getElementById('obPetals');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const wrap=canvas.parentElement;
+  let W,H,petals=[],pointer={x:-999,y:-999,active:false};
+  function resize(){ W=canvas.width=wrap.clientWidth; H=canvas.height=wrap.clientHeight; }
+  resize(); window.addEventListener('resize',resize);
+  const N=5;
+  const COLORS=['rgba(196,85,106,0.30)','rgba(166,58,80,0.24)','rgba(232,160,173,0.30)'];
+  for(let i=0;i<N;i++){
+    petals.push({
+      x:Math.random()*(W||400), y:Math.random()*(H||800),
+      vx:(Math.random()-0.5)*0.2, vy:0.12+Math.random()*0.22,
+      rot:Math.random()*Math.PI*2, vr:(Math.random()-0.5)*0.012,
+      s:4+Math.random()*5, c:COLORS[i%COLORS.length],
+      sway:Math.random()*Math.PI*2,
+    });
+  }
+  // re-seed positions once the real canvas size is settled (avoids corner clustering)
+  function reseed(){ resize(); petals.forEach(p=>{ p.x=Math.random()*W; p.y=Math.random()*H; }); }
+  setTimeout(reseed, 60);
+  function track(x,y){ const rect=wrap.getBoundingClientRect(); pointer.x=x-rect.left; pointer.y=y-rect.top; pointer.active=true; }
+  wrap.addEventListener('mousemove',e=>track(e.clientX,e.clientY));
+  wrap.addEventListener('mouseleave',()=>{pointer.active=false;});
+  wrap.addEventListener('touchmove',e=>{const t=e.touches[0]; track(t.clientX,t.clientY);},{passive:true});
+  function frame(){
+    if(!W||!H){ resize(); }
+    ctx.clearRect(0,0,W,H);
+    petals.forEach(p=>{
+      if(pointer.active){
+        const dx=pointer.x-p.x, dy=pointer.y-p.y, d=Math.hypot(dx,dy);
+        if(d<120 && d>1){ p.vx+=dx/d*0.02; p.vy+=dy/d*0.02; p.vr+=0.002; }
+      }
+      p.sway+=0.012;
+      p.x+=p.vx+Math.sin(p.sway)*0.25;
+      p.y+=p.vy;
+      p.rot+=p.vr;
+      p.vx*=0.98; p.vy=Math.min(p.vy,1.2);
+      if(p.vy<0.12) p.vy+=0.004;
+      if(p.y>H+12){ p.y=-12; p.x=Math.random()*W; p.vy=0.12+Math.random()*0.22; }
+      if(p.x<-12) p.x=W+12; if(p.x>W+12) p.x=-12;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.c;
+      ctx.beginPath(); ctx.ellipse(0,0,p.s,p.s*0.55,0,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+    requestAnimationFrame(frame);
+  }
+  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches) frame();
+})();
+
+/* ===== PETAL BURSTS ===== */
+const burst=(function(){
+  const canvas=document.getElementById('burstLayer');
+  const ctx=canvas.getContext('2d');
+  const phone=canvas.parentElement;
+  function resize(){ canvas.width=phone.clientWidth; canvas.height=phone.clientHeight; }
+  resize(); window.addEventListener('resize',resize);
+  let petals=[];
+  const COLORS=['#C4556A','#8B1A2F','#E8A0AD','#6B1224'];
+  function spawn(x,y,count){
+    for(let i=0;i<count;i++){
+      const a=Math.random()*Math.PI*2, sp=1.5+Math.random()*2.8;
+      petals.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-1.4,rot:Math.random()*Math.PI,vr:(Math.random()-0.5)*0.25,life:1,c:COLORS[Math.floor(Math.random()*COLORS.length)],s:3+Math.random()*4});
+    }
+    if(petals.length && !running){ running=true; frame(); }
+  }
+  let running=false;
+  function frame(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    petals=petals.filter(p=>p.life>0);
+    petals.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.07; p.rot+=p.vr; p.life-=0.017;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.globalAlpha=Math.max(0,p.life);
+      ctx.fillStyle=p.c;
+      ctx.beginPath(); ctx.ellipse(0,0,p.s,p.s*0.55,0,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+    if(petals.length){ requestAnimationFrame(frame); } else { running=false; ctx.clearRect(0,0,canvas.width,canvas.height); }
+  }
+  return function(el,count){
+    const pr=phone.getBoundingClientRect(), er=el.getBoundingClientRect();
+    spawn(er.left-pr.left+er.width/2, er.top-pr.top+er.height/2, count||14);
+  };
+})();
+
+/* ONBOARDING */
+const LIFE_DOMAINS=['Mornings','Mealtimes','Getting dressed','Toileting','Bedtime & sleep','Transitions','Following directions','Waiting & patience','Play & sharing','Communication','Big feelings','Overwhelming moments','Keeping bodies safe','Staying safe','Outings & errands','Screen time','Brushing teeth & hygiene','Cleaning up','Homework & learning','Separation','Other'];
+let obDomainsSel=new Set();
+let obMoments=[];
+
+let obCustomDomains=[];
+
+function obRenderDomains(){
+  const wrap=document.getElementById('obDomains');
+  const support=['Overwhelming moments','Keeping bodies safe','Staying safe'];
+  const core=[...LIFE_DOMAINS.filter(d=>d!=='Other' && !support.includes(d)), ...obCustomDomains];
+  const buttons=(items)=>items.map(d=>{
+    const isOther = d==='Other';
+    return `<button type="button" class="ob-chip ${obDomainsSel.has(d)?'sel':''} ${isOther?'ob-chip-other':''}" aria-pressed="${obDomainsSel.has(d)}" data-d="${escapeAttr(d)}">${isOther?'+ Other':escapeHtml(d)}</button>`;
+  }).join('');
+  wrap.innerHTML=buttons(core)
+    + `<div class="ob-support-heading">Optional support &amp; safety<br><span>Only choose these if they feel useful to your family.</span></div>`
+    + buttons(support) + buttons(['Other']);
+  wrap.querySelectorAll('.ob-chip').forEach(c=>{
+    c.addEventListener('click',()=>{
+      const d=c.dataset.d;
+      if(d==='Other'){ obAddCustomDomain(); return; }
+      if(obDomainsSel.has(d)) obDomainsSel.delete(d); else obDomainsSel.add(d);
+      obRenderDomains();
+    });
+  });
+}
+function obAddCustomDomain(){
+  openSheet('Add your own', `
+    <div class="sheet-sub">Is there something else on your mind? Add it in your own words.</div>
+    <div class="sheet-field">
+      <input class="sheet-input" id="obCustomInput" placeholder="e.g. Riding in the car" autocomplete="off">
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-btn ghost" onclick="closeSheet()">Cancel</button>
+      <button class="sheet-btn primary" id="obCustomSave">Add it</button>
+    </div>
+  `);
+  const save=()=>{
+    const v=document.getElementById('obCustomInput').value.trim();
+    if(!v){ document.getElementById('obCustomInput').focus(); return; }
+    if(!obCustomDomains.includes(v) && !LIFE_DOMAINS.includes(v)) obCustomDomains.push(v);
+    obDomainsSel.add(v);
+    closeSheet(); obRenderDomains();
+  };
+  document.getElementById('obCustomSave').addEventListener('click',save);
+  const inp=document.getElementById('obCustomInput');
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') save(); });
+  setTimeout(()=>inp.focus(),200);
+}
+function obRenderAdded(){
+  const wrap=document.getElementById('obAddedList');
+  if(!wrap) return;
+  wrap.innerHTML=obMoments.map((m,i)=>`<div class="ob-added">${escapeHtml(m)}<span class="x" data-i="${i}">✕</span></div>`).join('');
+  wrap.querySelectorAll('.x').forEach(x=>{
+    x.addEventListener('click',()=>{ obMoments.splice(+x.dataset.i,1); obRenderAdded(); });
+  });
+}
+function obAddMoment(){
+  const inp=document.getElementById('obMoment');
+  if(!inp) return;
+  const v=inp.value.trim();
+  if(!v) return;
+  obMoments.push(v);
+  inp.value='';
+  obRenderAdded();
+}
+
+// everyday-observation suggestions per life area (plain moments a parent would notice, NOT clinical targets)
+const MOMENT_SUGGESTIONS={
+  'Mornings':['Gets out of bed when it\u2019s time','Gets dressed when asked','Comes to the table for breakfast','Puts on shoes for the day'],
+  'Mealtimes':['Sits at the table through a meal','Tries a bite of something new','Uses a fork or spoon','Stays seated until finished'],
+  'Getting dressed':['Puts on shoes','Gets dressed with little help','Picks out their own clothes','Puts pajamas on at night'],
+  'Toileting':['Uses the toilet when reminded','Tells someone when they need to go','Stays dry through the day','Washes hands after'],
+  'Bedtime & sleep':['Follows the bedtime routine','Gets into bed without a fuss','Settles down to sleep','Stays in bed through the night'],
+  'Transitions':['Handles a change in plan','Stops an activity when asked','Moves to the next thing calmly','Leaves somewhere fun without upset'],
+  'Following directions':['Follows a one-step direction','Follows a two-step direction','Comes when called','Does a task when asked'],
+  'Waiting & patience':['Waits their turn','Waits a few minutes calmly','Handles hearing \u201cnot yet\u201d','Waits without interrupting'],
+  'Play & sharing':['Shares a toy','Plays alongside another child','Takes turns in a game','Lets someone else have a turn'],
+  'Communication':['Asks for help with words','Says what they want','Answers a simple question','Greets someone back'],
+  'Big feelings':['Names how they feel','Calms down after being upset','Asks for a break','Handles being told no'],
+  'Overwhelming moments':['Recovers after a hard moment','Uses a calming strategy','Handles frustration with a task','Settles with support'],
+  'Keeping bodies safe':['Keeps hands to themselves','Uses words when upset','Stays gentle when upset','Walks away when frustrated'],
+  'Staying safe':['Holds a hand in the parking lot','Stays close on an outing','Stops at the door or curb','Comes back when called'],
+  'Outings & errands':['Stays calm in the store','Rides in the car calmly','Waits in a line','Stays with the group'],
+  'Screen time':['Turns off the screen when asked','Handles screen time ending','Takes a break from a device','Waits for their turn on a device'],
+  'Brushing teeth & hygiene':['Brushes teeth','Washes hands','Combs or brushes hair','Washes up at bath time'],
+  'Cleaning up':['Puts toys away','Helps clean up a mess','Clears their plate','Tidies up when asked'],
+  'Homework & learning':['Sits for a learning activity','Finishes a small task','Tries something that\u2019s hard','Works for a few minutes'],
+  'Separation':['Says goodbye calmly','Handles being dropped off','Stays with a caregiver','Settles after a goodbye'],
+};
+
+// which time of day each life area tends to happen (morning / afternoon / evening / anytime)
+const AREA_TIME={
+  'Mornings':'morning',
+  'Getting dressed':'morning',
+  'Brushing teeth & hygiene':'morning',
+  'Separation':'morning',
+  'Mealtimes':'anytime',
+  'Toileting':'anytime',
+  'Transitions':'anytime',
+  'Following directions':'anytime',
+  'Waiting & patience':'anytime',
+  'Play & sharing':'afternoon',
+  'Communication':'anytime',
+  'Big feelings':'anytime',
+  'Overwhelming moments':'anytime',
+  'Keeping bodies safe':'anytime',
+  'Staying safe':'anytime',
+  'Outings & errands':'afternoon',
+  'Homework & learning':'afternoon',
+  'Screen time':'afternoon',
+  'Cleaning up':'evening',
+  'Bedtime & sleep':'evening',
+};
+// reverse lookup: moment text -> time of day (via its area)
+const MOMENT_TIME={};
+Object.keys(MOMENT_SUGGESTIONS).forEach(area=>{
+  const t=AREA_TIME[area]||'anytime';
+  MOMENT_SUGGESTIONS[area].forEach(m=>{ MOMENT_TIME[m]=t; });
+});
+// current time bucket
+function timeOfDayNow(){
+  const h=new Date().getHours();
+  if(h<12) return 'morning';
+  if(h<17) return 'afternoon';
+  return 'evening';
+}
+
+function obRenderSuggestions(){
+  const wrap=document.getElementById('obSuggest');
+  if(!wrap) return;
+  const picked=[...obDomainsSel];
+  // fallback if they skip the life-area screen
+  const areas = picked;
+  let html='';
+  areas.forEach(area=>{
+    const suggs=MOMENT_SUGGESTIONS[area];
+    if(!suggs) return; // custom areas have no preset suggestions
+    html+=`<div class="ob-grp"><svg viewBox="0 0 40 40">${bloomSVG(6,40)}</svg><span>${area}</span></div>`;
+    suggs.forEach(s=>{
+      const on=obMoments.includes(s);
+      html+=`<button type="button" class="ob-sugg ${on?'on':''}" aria-pressed="${on}" data-s="${escapeAttr(s)}"><span>${escapeHtml(s)}</span><span class="mk">${on?'✓':'+'}</span></button>`;
+    });
+  });
+  if(!html) html='<div class="ob-body" style="margin-top:10px;">Tap "Add my own" below to write what you\u2019d like to notice.</div>';
+  wrap.innerHTML=html;
+  wrap.querySelectorAll('.ob-sugg').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const s=el.dataset.s;
+      const i=obMoments.indexOf(s);
+      if(i>=0) obMoments.splice(i,1); else obMoments.push(s);
+      obRenderSuggestions();
+    });
+  });
+}
+function obAddOwn(){
+  openSheet('Add your own', `
+    <div class="sheet-sub">Describe a small, everyday moment you'd like to notice.</div>
+    <div class="sheet-field">
+      <input class="sheet-input" id="obOwnInput" placeholder="e.g. Puts shoes on before school" autocomplete="off">
+      <div class="sheet-hint">The clearest moments are things you could see happen.</div>
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-btn ghost" onclick="closeSheet()">Cancel</button>
+      <button class="sheet-btn primary" id="obOwnSave">Add it</button>
+    </div>
+  `);
+  const save=()=>{
+    const v=document.getElementById('obOwnInput').value.trim();
+    if(!v){ document.getElementById('obOwnInput').focus(); return; }
+    if(!obMoments.includes(v)) obMoments.push(v);
+    closeSheet(); obRenderSuggestions();
+  };
+  document.getElementById('obOwnSave').addEventListener('click',save);
+  const inp=document.getElementById('obOwnInput');
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') save(); });
+  setTimeout(()=>inp.focus(),200);
+}
+
+function obGo(step){
+  document.querySelectorAll('.ob-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('ob'+step).classList.add('active');
+  if(step===4) obRenderSuggestions();
+}
+function startChildSetup(name){
+  obDomainsSel=new Set(); obMoments=[]; obCustomDomains=[];
+  const nameInput=document.getElementById('obName'); if(nameInput) nameInput.value=name||'';
+  document.getElementById('onboarding').classList.remove('hidden');
+  obRenderDomains(); obGo(2);
+}
+function obFinish(){
+  // Every real profile starts with only moments the parent chose; no sample data leaks through.
+  state.targets = obMoments.map((m,i)=>({ id:'t'+(Date.now()+i), name:m, time: MOMENT_TIME[m]||'anytime' }));
+  state.entries = {}; state.observations=[]; state.boards = []; state.schedules = []; state.events = [];
+  const nameInput=document.getElementById('obName');
+  const name=(nameInput && nameInput.value.trim())||'your family';
+  state.childName = name;
+  state.onboarded = true;
+  saveData();
+  document.getElementById('onboarding').classList.add('hidden');
+  const _sh=document.querySelector('.subhead'); if(_sh) _sh.textContent = greetingText();
+  currentProgressTarget=state.targets[0] ? state.targets[0].id : null;
+  renderHome(); renderLog(); renderProgress(); renderBoards(); renderSchedules(); renderShare(); renderChildSwitcher();
+}
+function greetingText(){
+  const hour=new Date().getHours();
+  const g = hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
+  const who = state.childName && state.childName!=='your family' ? `${state.childName}'s family` : 'there';
+  return `${g}, ${who}`;
+}
+
+// show onboarding only for brand-new users
+if(!state.onboarded){
+  document.getElementById('obBloom').innerHTML=halfBloomSVG(96);
+  var obLogo2=document.getElementById('obLogo2'); if(obLogo2) obLogo2.innerHTML=halfBloomSVG(96);
+  obRenderDomains();
+} else {
+  document.getElementById('onboarding').classList.add('hidden');
+}
+var obAddOwnBtn=document.getElementById('obAddOwnBtn');
+if(obAddOwnBtn) obAddOwnBtn.addEventListener('click',obAddOwn);
+
+const _sh0=document.querySelector('.subhead'); if(_sh0) _sh0.textContent = greetingText();
+
+// child switcher chip toggle
+(function(){
+  const chip=document.getElementById('childChip');
+  const menu=document.getElementById('childMenu');
+  if(chip && menu){
+    chip.addEventListener('click',(e)=>{ e.stopPropagation(); const open=menu.classList.toggle('open'); chip.setAttribute('aria-expanded',String(open)); });
+    document.addEventListener('click',()=>{ menu.classList.remove('open'); chip.setAttribute('aria-expanded','false'); });
+  }
+})();
+
+showScreen(currentTab); renderLog(); renderProgress(); renderBoards(); renderSchedules(); renderShare(); renderChildSwitcher();
+document.getElementById('logoBloom').innerHTML=halfBloomSVG(20);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('Offline mode is unavailable.', e)));
+}
+</script>
+
+</body>
+</html>
