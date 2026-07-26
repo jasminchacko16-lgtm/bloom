@@ -1,2 +1,4 @@
+.cf-dist/
+.netlify/
 .DS_Store
 .vercel
