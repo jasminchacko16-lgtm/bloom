@@ -432,6 +432,11 @@
   .ob-sugg .mk{margin-left:auto; color:var(--brand-light); font-size:16px; font-weight:700;}
   .ob-sugg.on{background:var(--tint-soft); border-color:var(--brand-light);}
   .ob-sugg.on .mk{color:var(--brand);}
+  .ob-own-group{margin:2px 0 14px; padding:11px; background:rgba(245,234,232,.58); border:1px solid var(--brand-pale); border-radius:13px;}
+  .ob-own-label{font-family:'Quicksand',sans-serif; font-weight:700; font-size:12px; color:var(--brand-deep); margin:0 0 7px;}
+  .ob-own-item{display:flex; align-items:center; gap:8px; padding:8px 2px 2px; font-family:'Nunito',sans-serif; font-size:13px; color:var(--brand-deep);}
+  .ob-own-item .check{color:var(--brand); font-weight:800;}
+  .ob-own-remove{margin-left:auto; border:0; background:transparent; padding:3px 5px; color:var(--brand-light); font-family:'Nunito',sans-serif; font-size:11.5px; font-weight:700; cursor:pointer;}
   .ob-add-own{background:none; border:none; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; color:var(--brand); cursor:pointer; margin-top:6px; align-self:center; padding:6px;}
   .ob-support-heading{flex-basis:100%; margin:10px 0 0; padding:10px 12px; border-radius:12px; background:var(--tint-soft); color:var(--brand-deep); font-size:11.5px; line-height:1.4; text-align:left;}
   .privacy-note{font-family:'Nunito',sans-serif; font-size:11.5px; line-height:1.5; color:var(--ink-soft); text-align:center; margin:14px 0 4px;}
@@ -2281,6 +2286,7 @@ const burst=(function(){
 const LIFE_DOMAINS=['Mornings','Mealtimes','Getting dressed','Toileting','Bedtime & sleep','Transitions','Following directions','Waiting & patience','Play & sharing','Communication','Big feelings','Overwhelming moments','Keeping bodies safe','Staying safe','Outings & errands','Screen time','Brushing teeth & hygiene','Cleaning up','Homework & learning','Separation','Other'];
 let obDomainsSel=new Set();
 let obMoments=[];
+let obOwnMoments=[];
 
 let obCustomDomains=[];
 
@@ -2412,7 +2418,8 @@ function obRenderSuggestions(){
   const picked=[...obDomainsSel];
   // fallback if they skip the life-area screen
   const areas = picked;
-  let html='';
+  const ownMoments=obOwnMoments.filter(m=>obMoments.includes(m));
+  let html=ownMoments.length?`<div class="ob-own-group" aria-live="polite"><div class="ob-own-label">Added by you</div>${ownMoments.map(m=>`<div class="ob-own-item"><span class="check">✓</span><span>${escapeHtml(m)}</span><button type="button" class="ob-own-remove" data-own="${escapeAttr(m)}" aria-label="Remove ${escapeAttr(m)}">Remove</button></div>`).join('')}</div>`:'';
   areas.forEach(area=>{
     const suggs=MOMENT_SUGGESTIONS[area];
     if(!suggs) return; // custom areas have no preset suggestions
@@ -2429,6 +2436,14 @@ function obRenderSuggestions(){
       const s=el.dataset.s;
       const i=obMoments.indexOf(s);
       if(i>=0) obMoments.splice(i,1); else obMoments.push(s);
+      obRenderSuggestions();
+    });
+  });
+  wrap.querySelectorAll('.ob-own-remove').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const moment=el.dataset.own;
+      obMoments=obMoments.filter(m=>m!==moment);
+      obOwnMoments=obOwnMoments.filter(m=>m!==moment);
       obRenderSuggestions();
     });
   });
@@ -2449,6 +2464,7 @@ function obAddOwn(){
     const v=document.getElementById('obOwnInput').value.trim();
     if(!v){ document.getElementById('obOwnInput').focus(); return; }
     if(!obMoments.includes(v)) obMoments.push(v);
+    if(!obOwnMoments.includes(v)) obOwnMoments.push(v);
     closeSheet(); obRenderSuggestions();
   };
   document.getElementById('obOwnSave').addEventListener('click',save);
@@ -2463,7 +2479,7 @@ function obGo(step){
   if(step===4) obRenderSuggestions();
 }
 function startChildSetup(name){
-  obDomainsSel=new Set(); obMoments=[]; obCustomDomains=[];
+  obDomainsSel=new Set(); obMoments=[]; obOwnMoments=[]; obCustomDomains=[];
   const nameInput=document.getElementById('obName'); if(nameInput) nameInput.value=name||'';
   document.getElementById('onboarding').classList.remove('hidden');
   obRenderDomains(); obGo(2);
