@@ -217,6 +217,10 @@
   .chart-wrap{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 13px 11px; margin-bottom:14px;}
   .chart-title{font-size:12px; color:var(--ink-soft); margin-bottom:9px;}
   .note-box{background:var(--tint-soft); border-radius:14px; padding:11px 13px; font-size:12px; color:var(--brand-deep); line-height:1.5;}
+  .tour-count{font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--brand-light); margin-bottom:7px;}
+  .tour-icon{width:38px; height:38px; border-radius:13px; display:flex; align-items:center; justify-content:center; background:var(--tint-soft); color:var(--brand); font-size:19px; margin-bottom:10px;}
+  .tour-title{font-family:'Quicksand',sans-serif; font-size:18px; font-weight:700; color:var(--brand-deep); margin-bottom:6px;}
+  .tour-copy{font-family:'Nunito',sans-serif; font-size:13px; line-height:1.55; color:var(--ink-soft);}
 
   /* TOKENS */
   .board-card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:15px; margin-bottom:12px;}
@@ -594,7 +598,7 @@
       <!-- FOR MY CHILD (tokens + visuals) -->
       <section class="screen" id="screen-child" role="tabpanel" aria-labelledby="tab-child">
         <div class="seg">
-          <button id="secTokens" class="on">Tokens</button>
+          <button id="secTokens" class="on">Reward boards</button>
           <button id="secVisuals">Schedules</button>
         </div>
 
@@ -609,7 +613,7 @@
           </div>
           <div class="celebrate" id="celebrateBanner"></div>
           <div id="boardList"></div>
-          <button class="add-target" id="addBoardBtn">+ new token board</button>
+          <button class="add-target" id="addBoardBtn">+ new reward board</button>
         </div>
 
         <div id="visualsSection" style="display:none;">
@@ -669,6 +673,7 @@ function makeChild(id, name, opts){
 const DEFAULTS = {
   activeChildId: 'child1',
   onboarded: false,
+  quickStartDone: false,
   children: [
     {
       id: 'child1',
@@ -742,6 +747,7 @@ if(!persist.children || !persist.children.length){ persist = JSON.parse(JSON.str
 if(!persist.activeChildId || !persist.children.find(c=>c.id===persist.activeChildId)){
   persist.activeChildId = persist.children[0].id;
 }
+if(typeof persist.quickStartDone !== 'boolean') persist.quickStartDone=false;
 persist.children.forEach(child=>{
   if(!Array.isArray(child.observations)) child.observations=[];
   child.observations.forEach(observation=>{ if(!Array.isArray(observation.help)) observation.help=[]; });
@@ -802,6 +808,7 @@ function renderChildSwitcher(){
       <span class="dot"></span>${escapeHtml(c.name || 'Your child')}
     </button>`).join('')
     + `<button type="button" role="menuitem" class="child-menu-item child-menu-add" id="childAddBtn">+ Add a child</button>`
+    + `<button type="button" role="menuitem" class="child-menu-item" id="childQuickStartBtn">Getting started</button>`
     + `<button type="button" role="menuitem" class="child-menu-item" id="childPrivacyBtn">Data &amp; privacy</button>`;
   menu.querySelectorAll('[data-child]').forEach(el=>{
     el.addEventListener('click',()=>{ menu.classList.remove('open'); switchChild(el.dataset.child); });
@@ -828,6 +835,7 @@ function renderChildSwitcher(){
     document.getElementById('acName').addEventListener('keydown',e=>{ if(e.key==='Enter') save(); });
     setTimeout(()=>document.getElementById('acName').focus(),200);
   });
+  document.getElementById('childQuickStartBtn').addEventListener('click',()=>{ menu.classList.remove('open'); openQuickStart(); });
   document.getElementById('childPrivacyBtn').addEventListener('click',()=>{ menu.classList.remove('open'); openPrivacySheet(); });
 }
 
@@ -1332,8 +1340,8 @@ function renderBoards(){
     list.innerHTML=`<div class="child-empty">
       <svg width="64" height="64" viewBox="0 0 64 64">${bloomSVG(4,64)}</svg>
       <div class="ce-title">Turn wins into something to see</div>
-      <div class="ce-body">A token board lets your child collect stars toward a reward they're excited about. Great for motivation.</div>
-      <button class="ce-btn" id="emptyBoardBtn">Create a token board</button>
+      <div class="ce-body">A reward board lets your child collect stars toward something they are excited about. It is also sometimes called a token board.</div>
+      <button class="ce-btn" id="emptyBoardBtn">Create a reward board</button>
     </div>`;
     document.getElementById('emptyBoardBtn').addEventListener('click',()=>document.getElementById('addBoardBtn').click());
     return;
@@ -1679,6 +1687,32 @@ function showScreen(name){
     renderShare();
   }
 }
+function openQuickStart(step=0){
+  const steps=[
+    {icon:'✦', title:'Notice one small moment', copy:'On Home, tap a moment when it happens. You do not need to write everything down—small, real moments are enough.'},
+    {icon:'♡', title:'Add what seemed to help', copy:'After you log a moment, you can optionally note what helped, such as a quiet space, a choice, or a visual reminder. Skip it when life is busy.'},
+    {icon:'⭐', title:'Make progress visible', copy:'In Reward boards, choose one small routine or behavior and a reward your child wants. Add a star each time they work toward it. Reward boards are also often called token boards.'}
+  ];
+  const tour=steps[step];
+  const last=step===steps.length-1;
+  openSheet('A gentle start', `
+    <div class="tour-count">${step+1} of ${steps.length}</div>
+    <div class="tour-icon">${tour.icon}</div>
+    <div class="tour-title">${tour.title}</div>
+    <div class="tour-copy">${tour.copy}</div>
+    <div class="sheet-actions"><button class="sheet-btn ghost" id="tourSkip">${last?'Done':'Skip tour'}</button><button class="sheet-btn primary" id="tourNext">${last?'Open reward boards':'Next'}</button></div>
+  `);
+  document.getElementById('tourSkip').addEventListener('click',()=>finishQuickStart());
+  document.getElementById('tourNext').addEventListener('click',()=>{
+    if(last) finishQuickStart('child'); else openQuickStart(step+1);
+  });
+}
+function finishQuickStart(screen){
+  persist.quickStartDone=true;
+  saveData();
+  closeSheet();
+  if(screen){ currentTab=screen; focus=null; showScreen(currentTab); }
+}
 document.querySelectorAll('.tabbar .tab').forEach(btn=>{
   btn.addEventListener('click',()=>{
     currentTab=btn.dataset.screen;
@@ -1866,12 +1900,12 @@ document.getElementById('addBoardBtn').addEventListener('click',openBoardForm);
 function openBoardForm(){
   const tokenChoices=TOKEN_EMOJI_CHOICES.slice(0,8);
   const sizes=[3,4,5,6,8,10,12];
-  openSheet('New token board', `
-    <div class="sheet-sub">Token boards help your child work toward something they love, one step at a time.</div>
+  openSheet('New reward board', `
+    <div class="sheet-sub">A reward board makes one small goal visible. Give a star for each effort, then celebrate the reward when the board fills. These are also called token boards.</div>
     <div class="sheet-field">
       <label class="sheet-label">What are you working on?</label>
       <input class="sheet-input" id="bfGoal" placeholder="e.g. Morning routine" autocomplete="off">
-      <div class="sheet-hint">A routine or skill you're building together.</div>
+      <div class="sheet-hint">Choose one small, clear routine or behavior to practice together.</div>
     </div>
     <div class="sheet-field">
       <label class="sheet-label">What's the reward?</label>
@@ -1881,7 +1915,7 @@ function openBoardForm(){
     <div class="sheet-field">
       <label class="sheet-label">How many tokens to fill the board?</label>
       <div class="size-pick" id="bfSizes">${sizes.map((s,i)=>`<button type="button" class="size-opt ${s===5?'on':''}" data-size="${s}">${s}</button>`).join('')}</div>
-      <div class="sheet-hint">Fewer tokens = quicker wins. Five is a nice start.</div>
+      <div class="sheet-hint">Fewer stars = quicker wins. Start with 3–5 while your child is getting used to it.</div>
     </div>
     <div class="sheet-field">
       <label class="sheet-label">Pick a token</label>
@@ -2033,7 +2067,7 @@ function buildSummaryDoc(){
     </div>
     <h2>Moments noticed</h2>
     <table><tr><th>Moment</th><th style="text-align:center">Days noticed</th><th style="text-align:right">This week</th><th style="text-align:right">Total</th></tr>${skillRows||'<tr><td colspan=4>No moments yet</td></tr>'}</table>
-    ${state.boards.length?`<h2>Token boards</h2><table><tr><th>Goal</th><th>Reward</th><th style="text-align:right">Progress</th></tr>${boardRows}</table>`:''}
+    ${state.boards.length?`<h2>Reward boards</h2><table><tr><th>Goal</th><th>Reward</th><th style="text-align:right">Progress</th></tr>${boardRows}</table>`:''}
     <div class="note">This home observation summary was created by ${escapeHtml(name)}'s family. It is not a clinical assessment, diagnosis, or treatment record.</div>
     <div class="brand">🌸 made with bloom</div>
   </body></html>`;
@@ -2497,6 +2531,7 @@ function obFinish(){
   const _sh=document.querySelector('.subhead'); if(_sh) _sh.textContent = greetingText();
   currentProgressTarget=state.targets[0] ? state.targets[0].id : null;
   renderHome(); renderLog(); renderProgress(); renderBoards(); renderSchedules(); renderShare(); renderChildSwitcher();
+  if(!persist.quickStartDone) setTimeout(()=>openQuickStart(),250);
 }
 function greetingText(){
   const hour=new Date().getHours();

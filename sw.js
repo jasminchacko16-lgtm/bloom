@@ -1,4 +1,4 @@
-const CACHE = 'bloom-shell-v20';
+const CACHE = 'bloom-shell-v21';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (event) => {
