@@ -224,6 +224,15 @@
 
   /* TOKENS */
   .board-card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:15px; margin-bottom:12px;}
+  .starter-suggestions{margin:0 0 14px;}
+  .starter-kicker{font-family:'Quicksand',sans-serif; font-size:12px; font-weight:700; color:var(--brand-deep); margin:0 0 4px;}
+  .starter-copy{font-family:'Nunito',sans-serif; font-size:11.5px; line-height:1.45; color:var(--ink-soft); margin:0 0 9px;}
+  .starter-card{background:linear-gradient(135deg,rgba(245,234,232,.9),rgba(255,255,255,.9)); border:1px solid var(--brand-pale); border-radius:14px; padding:12px; margin-top:8px; display:flex; gap:10px; align-items:flex-start;}
+  .starter-icon{width:28px; height:28px; flex:0 0 28px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:var(--card); font-size:15px;}
+  .starter-main{min-width:0; flex:1;}
+  .starter-title{font-family:'Nunito',sans-serif; font-size:12.5px; font-weight:800; color:var(--brand-deep); line-height:1.3;}
+  .starter-detail{font-family:'Nunito',sans-serif; font-size:10.5px; color:var(--ink-soft); line-height:1.35; margin-top:2px;}
+  .starter-action{align-self:center; border:0; background:transparent; color:var(--brand); font-family:'Nunito',sans-serif; font-size:11px; font-weight:800; cursor:pointer; padding:5px 0 5px 6px; white-space:nowrap;}
   .board-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
   .board-goal{font-size:15.5px; font-weight:800; color:var(--brand-deep); cursor:pointer;}
   .board-reward{font-size:12px; color:var(--ink-soft); margin-top:1px;}
@@ -612,11 +621,13 @@
             </div>
           </div>
           <div class="celebrate" id="celebrateBanner"></div>
+          <div class="starter-suggestions" id="boardSuggestions"></div>
           <div id="boardList"></div>
           <button class="add-target" id="addBoardBtn">+ new reward board</button>
         </div>
 
         <div id="visualsSection" style="display:none;">
+          <div class="starter-suggestions" id="scheduleSuggestions"></div>
           <div id="scheduleList"></div>
           <button class="add-target" id="addScheduleBtn">+ new schedule</button>
         </div>
@@ -664,6 +675,7 @@ function makeChild(id, name, opts){
     weeklyReflection: opts.weeklyReflection || null,
     weeklyFocus: opts.weeklyFocus || null,
     weeklyFocuses: opts.weeklyFocuses || (opts.weeklyFocus ? [opts.weeklyFocus] : []),
+    selectedDomains: opts.selectedDomains || [],
     boards: opts.boards || [],
     schedules: opts.schedules || [],
     events: opts.events || [],
@@ -685,6 +697,7 @@ const DEFAULTS = {
       weeklyReflection: null,
       weeklyFocus: null,
       weeklyFocuses: [],
+      selectedDomains: [],
       boards: [],
       schedules: [],
       events: [],
@@ -760,7 +773,7 @@ let progressRange = 'day';
 let expandedDetailId = null;
 let previewFocusReviewWeek = null;
 function activeChild(){ return persist.children.find(c=>c.id===persist.activeChildId) || persist.children[0]; }
-['targets','entries','observations','weeklyReflection','weeklyFocus','weeklyFocuses','boards','schedules','events','ageMode'].forEach(key=>{
+['targets','entries','observations','weeklyReflection','weeklyFocus','weeklyFocuses','boards','schedules','events','ageMode','selectedDomains'].forEach(key=>{
   Object.defineProperty(state, key, {
     get(){ return activeChild()[key]; },
     set(v){ activeChild()[key]=v; },
@@ -1278,6 +1291,46 @@ function renderProgress(){
 
 /* TOKENS */
 const TOKEN_EMOJI_CHOICES=['⭐','🌟','😊','🦋','🌸','🚀','🦖','🐠','⚡','🏅','💎','🍩'];
+const STARTER_RECIPES={
+  'Mornings':{board:{icon:'☀️',title:'Get ready before school',detail:'Work toward choosing breakfast music.',goal:'Get ready before school',reward:'Pick breakfast music'},schedule:{icon:'☀️',title:'Morning routine',detail:'Wake up → get dressed → breakfast → shoes.',steps:[['⏰','Wake up'],['👕','Get dressed'],['🍳','Breakfast'],['👟','Shoes on']]}},
+  'Getting dressed':{board:{icon:'👕',title:'Put on clothes with one reminder',detail:'Work toward choosing a song.',goal:'Put on clothes with one reminder',reward:'Choose a song'},schedule:{icon:'👕',title:'Getting dressed',detail:'Underwear → shirt → pants → socks → shoes.',steps:[['🩲','Underwear'],['👕','Shirt'],['👖','Pants'],['🧦','Socks'],['👟','Shoes']]}},
+  'Toileting':{board:{icon:'🚽',title:'Try the toilet before bath',detail:'Work toward choosing a bedtime story.',goal:'Try the toilet before bath',reward:'Choose a bedtime story'},schedule:{icon:'🧼',title:'Bathroom routine',detail:'Toilet → wash hands → pajamas.',steps:[['🚽','Try the toilet'],['🧼','Wash hands'],['🧸','Pajamas']]}},
+  'Mealtimes':{board:{icon:'🍽️',title:'Sit at the table for five minutes',detail:'Work toward choosing a family game.',goal:'Sit at the table for five minutes',reward:'Choose a family game'},schedule:{icon:'🍽️',title:'Mealtime routine',detail:'Wash hands → sit → eat → clear plate.',steps:[['🧼','Wash hands'],['🪑','Sit at table'],['🍽️','Eat'],['🧹','Clear plate']]}},
+  'Bedtime & sleep':{board:{icon:'🌙',title:'Follow bedtime steps',detail:'Work toward choosing tomorrow’s breakfast.',goal:'Follow bedtime steps',reward:'Choose tomorrow’s breakfast'},schedule:{icon:'🌙',title:'Bedtime routine',detail:'Bath → pajamas → teeth → story → sleep.',steps:[['🛁','Bath'],['🧸','Pajamas'],['🪥','Brush teeth'],['📖','Story'],['🌙','Sleep']]}},
+  'Transitions':{board:{icon:'➡️',title:'Move to the next activity',detail:'Work toward choosing a transition song.',goal:'Move to the next activity',reward:'Choose a song'},schedule:{icon:'➡️',title:'First, then',detail:'Finish one activity, clean up, then move on.',steps:[['✅','Finish activity'],['🧹','Clean up'],['➡️','Next activity']]}},
+  'Following directions':{board:{icon:'👂',title:'Finish one direction',detail:'Work toward a short preferred activity.',goal:'Finish one direction',reward:'Choose a short activity'}},
+  'Waiting & patience':{board:{icon:'⏳',title:'Wait calmly for two minutes',detail:'Work toward choosing a turn or game.',goal:'Wait calmly for two minutes',reward:'Choose a game'}},
+  'Play & sharing':{board:{icon:'🤝',title:'Take turns during play',detail:'Work toward choosing the next game.',goal:'Take turns during play',reward:'Choose the next game'}},
+  'Communication':{board:{icon:'💬',title:'Use a word, sign, or picture to ask',detail:'Work toward choosing a favorite song.',goal:'Use a word, sign, or picture to ask',reward:'Choose a favorite song'}},
+  'Big feelings':{board:{icon:'💛',title:'Try one calming tool',detail:'Work toward a cozy preferred activity.',goal:'Try one calming tool',reward:'Choose a cozy activity'}},
+  'Overwhelming moments':{board:{icon:'🌿',title:'Ask for a break',detail:'Work toward choosing a calming activity.',goal:'Ask for a break',reward:'Choose a calming activity'}},
+  'Screen time':{board:{icon:'📱',title:'Turn off the iPad when the timer ends',detail:'Work toward choosing the next activity.',goal:'Turn off the iPad when the timer ends',reward:'Choose the next activity'},schedule:{icon:'📱',title:'Screen-time transition',detail:'Timer → turn off → put away → next activity.',steps:[['⏲️','Timer ends'],['📱','Turn off'],['🧺','Put away'],['🎨','Next activity']]}},
+  'Brushing teeth & hygiene':{board:{icon:'🪥',title:'Brush teeth before bedtime',detail:'Work toward choosing a bedtime story.',goal:'Brush teeth before bedtime',reward:'Choose a bedtime story'},schedule:{icon:'🪥',title:'Tooth-brushing routine',detail:'Toothbrush → toothpaste → brush → rinse.',steps:[['🪥','Get toothbrush'],['🧴','Add toothpaste'],['🪥','Brush teeth'],['💧','Rinse']]}},
+  'Cleaning up':{board:{icon:'🧹',title:'Put away five toys',detail:'Work toward choosing a clean-up song.',goal:'Put away five toys',reward:'Choose a song'},schedule:{icon:'🧹',title:'Clean-up routine',detail:'Toys → books → clothes → finished.',steps:[['🧸','Put away toys'],['📚','Put away books'],['👕','Put away clothes'],['✅','All done']]}},
+  'Homework & learning':{board:{icon:'📚',title:'Start homework after snack',detail:'Work toward choosing a short break.',goal:'Start homework after snack',reward:'Choose a short break'},schedule:{icon:'📚',title:'Homework routine',detail:'Snack → homework → break → finish.',steps:[['🍎','Snack'],['📚','Homework'],['🧘','Short break'],['✅','Finish up']]}},
+  'Outings & errands':{schedule:{icon:'🛒',title:'Going-out routine',detail:'Shoes → car → store → checkout → home.',steps:[['👟','Shoes on'],['🚗','Get in car'],['🛒','Store'],['🧾','Checkout'],['🏠','Home']]}},
+};
+function selectedLifeAreas(){
+  if(Array.isArray(state.selectedDomains) && state.selectedDomains.length) return state.selectedDomains;
+  return Object.entries(MOMENT_SUGGESTIONS).filter(([,moments])=>state.targets.some(target=>moments.includes(target.name))).map(([area])=>area);
+}
+function starterRecipesFor(kind){
+  const used=new Set();
+  return selectedLifeAreas().map(area=>({area,...(STARTER_RECIPES[area]?.[kind]||{})})).filter(recipe=>recipe.title && !used.has(recipe.title) && used.add(recipe.title)).slice(0,2);
+}
+function renderStarterSuggestions(kind){
+  const isBoard=kind==='board';
+  const host=document.getElementById(isBoard?'boardSuggestions':'scheduleSuggestions');
+  if(!host) return;
+  if((isBoard?state.boards:state.schedules).length){ host.innerHTML=''; return; }
+  const recipes=starterRecipesFor(kind);
+  if(!recipes.length){ host.innerHTML=''; return; }
+  host.innerHTML=`<div class="starter-kicker">A few gentle starting points</div><p class="starter-copy">Based on what you chose during setup. Use one, edit it, or make your own.</p>${recipes.map((recipe,index)=>`<div class="starter-card"><div class="starter-icon">${recipe.icon}</div><div class="starter-main"><div class="starter-title">${escapeHtml(recipe.title)}</div><div class="starter-detail">${escapeHtml(recipe.detail)}</div></div><button type="button" class="starter-action" data-starter="${index}">Use this</button></div>`).join('')}`;
+  host.querySelectorAll('[data-starter]').forEach(button=>button.addEventListener('click',()=>{
+    const recipe=recipes[+button.dataset.starter];
+    if(isBoard) openBoardForm(recipe); else openScheduleForm(recipe);
+  }));
+}
 function rewardTileInner(b){
   if(b.rewardPhoto){
     return `<img class="photo" src="${escapeAttr(b.rewardPhoto)}" alt="${escapeAttr(b.reward)}"><span class="lbl">${escapeHtml(b.reward)}</span>`;
@@ -1335,6 +1388,7 @@ function renderBoards(){
   document.getElementById('modeYoung').classList.toggle('on', young);
   document.getElementById('modeOlder').classList.toggle('on', !young);
   const list=document.getElementById('boardList'); list.innerHTML='';
+  renderStarterSuggestions('board');
 
   if(state.boards.length===0){
     list.innerHTML=`<div class="child-empty">
@@ -1453,6 +1507,7 @@ function editSchedule(sid){
 
 function renderSchedules(){
   const list=document.getElementById('scheduleList'); list.innerHTML='';
+  renderStarterSuggestions('schedule');
   if(state.schedules.length===0){
     list.innerHTML=`<div class="child-empty">
       <svg width="64" height="64" viewBox="0 0 64 64">${bloomSVG(4,64)}</svg>
@@ -1896,25 +1951,26 @@ document.addEventListener('keydown',(e)=>{
 
 const REWARD_EMOJI_CHOICES=['🛝','🎬','🍦','🧸','🎮','📱','🏊','🚲','🍕','🎨','⚽','🎁'];
 
-document.getElementById('addBoardBtn').addEventListener('click',openBoardForm);
-function openBoardForm(){
+document.getElementById('addBoardBtn').addEventListener('click',()=>openBoardForm());
+function openBoardForm(starter={}){
   const tokenChoices=TOKEN_EMOJI_CHOICES.slice(0,8);
   const sizes=[3,4,5,6,8,10,12];
+  const defaultSize=starter.size||5;
   openSheet('New reward board', `
     <div class="sheet-sub">A reward board makes one small goal visible. Give a star for each effort, then celebrate the reward when the board fills. These are also called token boards.</div>
     <div class="sheet-field">
       <label class="sheet-label">What are you working on?</label>
-      <input class="sheet-input" id="bfGoal" placeholder="e.g. Morning routine" autocomplete="off">
+      <input class="sheet-input" id="bfGoal" value="${escapeAttr(starter.goal||'')}" placeholder="e.g. Morning routine" autocomplete="off">
       <div class="sheet-hint">Choose one small, clear routine or behavior to practice together.</div>
     </div>
     <div class="sheet-field">
       <label class="sheet-label">What's the reward?</label>
-      <input class="sheet-input" id="bfReward" placeholder="e.g. Trip to the park" autocomplete="off">
+      <input class="sheet-input" id="bfReward" value="${escapeAttr(starter.reward||'')}" placeholder="e.g. Trip to the park" autocomplete="off">
       <div class="sheet-hint">Something your child is excited to earn.</div>
     </div>
     <div class="sheet-field">
       <label class="sheet-label">How many tokens to fill the board?</label>
-      <div class="size-pick" id="bfSizes">${sizes.map((s,i)=>`<button type="button" class="size-opt ${s===5?'on':''}" data-size="${s}">${s}</button>`).join('')}</div>
+      <div class="size-pick" id="bfSizes">${sizes.map(s=>`<button type="button" class="size-opt ${s===defaultSize?'on':''}" data-size="${s}">${s}</button>`).join('')}</div>
       <div class="sheet-hint">Fewer stars = quicker wins. Start with 3–5 while your child is getting used to it.</div>
     </div>
     <div class="sheet-field">
@@ -1935,7 +1991,7 @@ function openBoardForm(){
     </div>
   `);
   // wire selections
-  let sel={size:5, token:TOKEN_EMOJI_CHOICES[0], remoji:REWARD_EMOJI_CHOICES[0], photo:null};
+  let sel={size:defaultSize, token:TOKEN_EMOJI_CHOICES[0], remoji:REWARD_EMOJI_CHOICES[0], photo:null};
   const body=document.getElementById('sheetBody');
   body.querySelectorAll('[data-size]').forEach(el=>el.addEventListener('click',()=>{
     body.querySelectorAll('[data-size]').forEach(x=>x.classList.remove('on')); el.classList.add('on'); sel.size=+el.dataset.size;
@@ -1974,14 +2030,14 @@ function finishBoard(goal,reward,rewardEmoji,size,tokenEmoji,rewardPhoto){
   saveData(); renderBoards(); renderShare();
 }
 
-document.getElementById('addScheduleBtn').addEventListener('click',openScheduleForm);
-function openScheduleForm(){
+document.getElementById('addScheduleBtn').addEventListener('click',()=>openScheduleForm());
+function openScheduleForm(starter={}){
   const iconChoices=EMOJI_CHOICES.slice(0,10);
   openSheet('New visual schedule', `
     <div class="sheet-sub">Break a routine into simple picture steps your child can follow one at a time.</div>
     <div class="sheet-field">
       <label class="sheet-label">Schedule name</label>
-      <input class="sheet-input" id="sfTitle" placeholder="e.g. Bedtime routine" autocomplete="off">
+      <input class="sheet-input" id="sfTitle" value="${escapeAttr(starter.title||'')}" placeholder="e.g. Bedtime routine" autocomplete="off">
     </div>
     <div class="sheet-field">
       <label class="sheet-label">Steps</label>
@@ -1998,7 +2054,7 @@ function openScheduleForm(){
       <button class="sheet-btn primary" id="sfSave">Create schedule</button>
     </div>
   `);
-  const steps=[]; let icon=EMOJI_CHOICES[0];
+  const steps=(starter.steps||[]).map(([emoji,label])=>({emoji,label,done:false})); let icon=EMOJI_CHOICES[0];
   const body=document.getElementById('sheetBody');
   const stepsEl=document.getElementById('sfSteps');
   const hint=document.getElementById('sfEmptyHint');
@@ -2007,6 +2063,7 @@ function openScheduleForm(){
     hint.style.display = steps.length?'none':'block';
     stepsEl.querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click',()=>{ steps.splice(+b.dataset.rm,1); redraw(); }));
   }
+  redraw();
   body.querySelectorAll('[data-icon]').forEach(el=>el.addEventListener('click',()=>{
     body.querySelectorAll('[data-icon]').forEach(x=>x.classList.remove('on')); el.classList.add('on'); icon=el.dataset.icon;
   }));
@@ -2522,6 +2579,7 @@ function obFinish(){
   // Every real profile starts with only moments the parent chose; no sample data leaks through.
   state.targets = obMoments.map((m,i)=>({ id:'t'+(Date.now()+i), name:m, time: MOMENT_TIME[m]||'anytime' }));
   state.entries = {}; state.observations=[]; state.boards = []; state.schedules = []; state.events = [];
+  state.selectedDomains=[...obDomainsSel];
   const nameInput=document.getElementById('obName');
   const name=(nameInput && nameInput.value.trim())||'your family';
   state.childName = name;
