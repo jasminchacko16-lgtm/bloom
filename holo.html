@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1A1016">
+<meta name="description" content="Holo — an identity card that catches the light. Tilt it and the foil moves, the hearts come up on the side you turned, and the photo flips its colours.">
+<title>Holo — an identity card that catches the light</title>
+<style>
+  :root{
+    --stage:#1A1016;
+    --stage-lift:#251620;
+    --ink:#F6EDF2;
+    --ink-soft:#B79FAC;
+    --line:#3A2430;
+    --accent:#E8A0AD;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:radial-gradient(120% 90% at 50% 0%, #2A1824 0%, var(--stage) 62%);
+    color:var(--ink);
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center;
+    padding:40px 20px 56px;
+    gap:26px;
+  }
+  .page-head{text-align:center; max-width:520px;}
+  .page-head h1{font-size:15px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--accent);}
+  .page-head p{margin-top:10px; font-size:13.5px; line-height:1.65; color:var(--ink-soft);}
+
+  /* ── THE STAGE. `perspective` lives on the host, not the card, so the tilt is
+        a real 3D rotation rather than a skew. ─────────────────────────────── */
+  /* `pan-y` rather than `none`: a drag across the card has to tilt it, but the
+     card is most of a phone screen and blocking vertical scroll would trap the
+     page behind it. */
+  .holo-stage{width:100%; max-width:560px; perspective:1100px; touch-action:pan-y;}
+
+  /* ── THE CARD ─────────────────────────────────────────────────────────────
+     A landscape identity card, ~1.55:1 — roughly a credit card's proportion.
+
+     `isolation:isolate` is load-bearing: every foil layer uses mix-blend-mode,
+     and without its own stacking context they would blend with the PAGE instead
+     of with the print underneath. `container-type` lets the type scale in `cqw`,
+     so the card is one object at any width.                                   */
+  .holo-card{
+    position:relative; width:100%; aspect-ratio:1.55;
+    border-radius:14px;
+    background:#ffd9e8;
+    transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+    transform-style:preserve-3d;
+    will-change:transform;
+    isolation:isolate;
+    overflow:hidden;
+    container-type:inline-size;
+    /* EDGE CATCH. Each border lights independently by how much it faces the
+       viewer, so the card reads as having thickness instead of a uniform rim. */
+    box-shadow:
+      0 30px 54px -26px rgba(30,4,18,.72),
+      0 6px 14px -6px rgba(30,4,18,.45),
+      inset 1px 0 0 rgba(255,255,255,calc(.14 + .7 * var(--edge-l,0))),
+      inset -1px 0 0 rgba(255,255,255,calc(.14 + .7 * var(--edge-r,0))),
+      inset 0 1px 0 rgba(255,255,255,calc(.14 + .7 * var(--edge-t,0))),
+      inset 0 -1px 0 rgba(255,255,255,calc(.14 + .7 * var(--edge-b,0)));
+  }
+  .holo-card > *{position:absolute; inset:0; border-radius:inherit; pointer-events:none;}
+
+  /* THE PRINTED SURFACE. Fixed colour for every material — everything above is
+     light landing on it, and the print itself never changes as the card moves. */
+  .holo-body{background:var(--body-grad, linear-gradient(115deg,#ffd9e8,#f9bcc9));}
+
+  /* ── THE HEARTS ───────────────────────────────────────────────────────────
+     Two passes over the same field, masked to opposite halves: a dark one
+     pressed into the print and a lit one catching. `--reveal` is a THRESHOLD,
+     not a fade from zero (see the engine), so at rest the card is perfectly
+     clean and the hearts arrive as something the surface was hiding.
+
+     The mask centre rides out toward the edge you turned toward, so the band
+     travels across the card rather than fading up in place.                   */
+  .holo-pattern, .holo-pattern--lit{
+    background-image:var(--heart-tile,none);
+    background-size:13% auto;
+    background-position:var(--l1-x,50%) var(--l1-y,50%);
+  }
+  /* The pressed pass. The tile is drawn in WHITE, and multiply by white is a
+     no-op — so it is inverted first, which turns the hearts black and leaves the
+     space around them transparent (invert does not touch alpha). Masked to the
+     half AWAY from the light, so this side reads as pressed into the print. */
+  .holo-pattern{
+    filter:invert(1);
+    mix-blend-mode:multiply;
+    opacity:calc(var(--reveal,0) * .34);
+    -webkit-mask-image:radial-gradient(80% 80% at var(--reveal-x,50%) var(--reveal-y,50%), transparent 34%, rgba(0,0,0,.5) 74%, #000 100%);
+    mask-image:radial-gradient(80% 80% at var(--reveal-x,50%) var(--reveal-y,50%), transparent 34%, rgba(0,0,0,.5) 74%, #000 100%);
+  }
+  /* The catching pass. Nothing but the white field and the mask: the mask centre
+     already rides toward the edge you turned toward, so it carries the direction
+     on its own. Blending a light RAMP into this layer was the mistake — an opaque
+     gradient under a mostly-transparent tile stops being hearts and becomes a
+     white wash over the whole card. */
+  .holo-pattern--lit{
+    mix-blend-mode:screen;
+    opacity:calc(var(--reveal,0) * .6);
+    /* 58%, not 115%. The mask has to fall off INSIDE the card or the band is the
+       whole card and the reveal stops being directional — which is the thing the
+       threshold exists to make legible. */
+    -webkit-mask-image:radial-gradient(58% 58% at var(--reveal-x,50%) var(--reveal-y,50%), #000 0%, rgba(0,0,0,.55) 42%, transparent 84%);
+    mask-image:radial-gradient(58% 58% at var(--reveal-x,50%) var(--reveal-y,50%), #000 0%, rgba(0,0,0,.55) 42%, transparent 84%);
+  }
+
+  /* ── THE FOIL. Three generic slots. What each paints, how fast it moves and
+        how it composites all come from the material — the stylesheet never
+        knows which one is mounted. ──────────────────────────────────────── */
+  .holo-foil{
+    background-image:var(--l1-img,none); background-size:var(--l1-size,cover);
+    background-position:var(--l1-x,50%) var(--l1-y,50%);
+    background-blend-mode:var(--l1-bgblend,normal);
+    mix-blend-mode:var(--l1-blend,overlay);
+    filter:var(--l1-filter,none);
+    opacity:var(--l1-o,0);
+  }
+  .holo-foil--b{
+    background-image:var(--l2-img,none); background-size:var(--l2-size,cover);
+    background-position:var(--l2-x,50%) var(--l2-y,50%);
+    background-blend-mode:var(--l2-bgblend,normal);
+    mix-blend-mode:var(--l2-blend,overlay);
+    filter:var(--l2-filter,none);
+    opacity:var(--l2-o,0);
+  }
+  .holo-foil--c{
+    background-image:var(--l3-img,none); background-size:var(--l3-size,cover);
+    background-position:var(--l3-x,50%) var(--l3-y,50%);
+    background-blend-mode:var(--l3-bgblend,normal);
+    mix-blend-mode:var(--l3-blend,overlay);
+    filter:var(--l3-filter,none);
+    opacity:var(--l3-o,0);
+  }
+  /* Embedded in a grid beside many other live cards, the third layer — a
+     material's finest detail — is the one to thin. */
+  [data-holo-lite] .holo-foil--c{opacity:calc(var(--l3-o,0) * .55);}
+
+  /* THE STREAK. A fast pass smears the highlight along the direction of travel;
+     a slow one leaves it round. One gradient angle plus a length. */
+  .holo-smear{mix-blend-mode:screen; opacity:var(--smear,0); overflow:hidden;}
+  .holo-smear::before{
+    content:''; position:absolute; left:var(--gx,50%); top:var(--gy,50%);
+    width:78%; height:30%;
+    transform:translate(-50%,-50%) rotate(var(--smear-angle,0deg));
+    background:radial-gradient(closest-side ellipse at 50% 50%, rgba(255,255,255,.6), rgba(255,255,255,0) 78%);
+  }
+  /* THE SWEET SPOT — the one angle where the whole material lines up. */
+  .holo-spot{
+    background:radial-gradient(farthest-side circle at var(--gx,50%) var(--gy,50%), rgba(255,255,255,.95) 0%, rgba(255,238,248,.4) 26%, rgba(255,255,255,0) 60%);
+    mix-blend-mode:screen; opacity:calc(var(--spot,0) * .5);
+  }
+  /* The print grain, shared with the tile — it is what ties the two surfaces to
+     the same medium rather than leaving the tile looking pasted on. */
+  .holo-noise{background-image:var(--grain,none); background-size:120px 120px; mix-blend-mode:overlay; opacity:.14;}
+  /* The glare tracks the pointer DIRECTLY, with no lag — a highlight is simply
+     where the light is, so lagging it would look like a mistake. */
+  .holo-glare{
+    background:radial-gradient(farthest-corner circle at var(--gx,50%) var(--gy,50%), rgba(255,255,255,.8) 0%, rgba(255,255,255,.24) 16%, rgba(255,255,255,0) 52%);
+    mix-blend-mode:soft-light;
+    opacity:calc(var(--glare-o,.55) * (.34 + .66 * var(--off,0)));
+  }
+  .holo-sheen{
+    background:linear-gradient(var(--reveal-angle,120deg), rgba(255,255,255,0) 30%, rgba(255,255,255,.55) 50%, rgba(255,255,255,0) 70%);
+    mix-blend-mode:soft-light;
+    opacity:calc(.1 + .26 * var(--off,0));
+  }
+
+  /* ── THE CONTENT, above the foil. Type sitting UNDER the sheet gets eaten by
+        it: the foil is light, and light lands on the print rather than on what
+        is written over it. ─────────────────────────────────────────────── */
+  .holo-content{display:flex; align-items:stretch; gap:5%; padding:7% 6.5%; z-index:3;}
+  .holo-text{flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between;}
+  .holo-mark{display:flex; align-items:center; gap:2.2cqw; color:#a8305c;}
+  .holo-mark svg{width:5.4cqw; height:5.4cqw; flex-shrink:0;}
+  .holo-mark span{font-size:2.5cqw; font-weight:700; letter-spacing:.34em; text-transform:uppercase; opacity:.75;}
+  /* EMBOSSING. The highlight comes from the opposite side to the shadow, both
+     driven by tilt, so the letters catch light like they were pressed into the
+     stock rather than printed on it. Under a pixel of travel: an emboss you can
+     measure is a bevel. */
+  .holo-name{
+    font-size:12.5cqw; line-height:.94; font-weight:800; letter-spacing:-.02em; color:#7c2044;
+    text-shadow:
+      calc(var(--emboss-x,0px) * -1) calc(var(--emboss-y,0px) * -1) 0 rgba(255,255,255,.9),
+      var(--emboss-x,0px) var(--emboss-y,0px) 0 rgba(104,20,54,.4);
+  }
+  .holo-since{
+    margin-top:1.6cqw; font-size:2.9cqw; font-weight:600; letter-spacing:.05em; color:#8c3a5e;
+    text-shadow:calc(var(--emboss-x,0px) * -1) calc(var(--emboss-y,0px) * -1) 0 rgba(255,255,255,.65);
+  }
+
+  /* ── THE TILE ─────────────────────────────────────────────────────────────
+     Deliberately plainer than the card: a hard two-colour duotone that gets a
+     highlight but no rainbow and no bars, which is what keeps the two surfaces
+     reading as different materials rather than one sheet with a hole in it.   */
+  .holo-tile{
+    position:relative; flex:0 0 auto; width:27%; align-self:stretch;
+    border-radius:9px; overflow:hidden; isolation:isolate;
+    box-shadow:0 1.4cqw 3cqw -1.2cqw rgba(88,14,48,.45);
+  }
+  .holo-tile > *{position:absolute; inset:0;}
+  /* The same photograph twice — positive, then negative revealed through a
+     travelling mask. A filter cannot invert PART of an element, so the sweep
+     needs two copies. */
+  .holo-tile__photo, .holo-tile__photo--neg{
+    background-image:var(--tile-src,none);
+    background-size:cover;
+    background-position:var(--tile-x,50%) 50%;
+  }
+  .holo-tile__photo{filter:grayscale(1) contrast(1.22) brightness(1.02);}
+  .holo-tile__photo--neg{
+    filter:grayscale(1) contrast(1.22) invert(1);
+    /* The sweep enters from whichever side you are turning toward. The two stops
+       are ordered so that at --tile-invert:0 the black region has zero width and
+       nothing shows — a naive `calc(x - 8%)` would leave a sliver inverted at
+       rest, because CSS clamps a decreasing stop to its predecessor. */
+    --neg-a:calc(var(--tile-invert,0) * 118% - 18%);
+    --neg-b:calc(var(--tile-invert,0) * 118%);
+    -webkit-mask-image:linear-gradient(var(--tile-sweep-angle,0deg), #000 0%, #000 var(--neg-a), transparent var(--neg-b));
+    mask-image:linear-gradient(var(--tile-sweep-angle,0deg), #000 0%, #000 var(--neg-a), transparent var(--neg-b));
+  }
+  /* THE DUOTONE, in two blends. `lighten` with the dark colour clamps the
+     blacks UP to it; `darken` with the light colour clamps the whites DOWN.
+     What is left is the photograph's luminance compressed between exactly two
+     inks — a real duotone, and it applies to both copies, so the flip trades
+     the two inks rather than tinting one image. */
+  .holo-tile__duo{background:var(--tile-dark,#8e3a63); mix-blend-mode:lighten;}
+  .holo-tile__tone{background:var(--tile-light,#f0d3e2); mix-blend-mode:darken;}
+  /* The tile's own sheen. Its hue TRAVELS as the flip progresses, so the tile
+     tours a range of the spectrum instead of landing on one fixed colour —
+     which is what separates "holographic" from "tinted". */
+  .holo-tile__foil{
+    background:
+      linear-gradient(var(--tile-sweep-angle,0deg), hsl(var(--tile-hue,200deg) 88% 74%) 0%, rgba(255,255,255,0) 62%),
+      repeating-linear-gradient(101deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 2.4%, rgba(0,0,0,.07) 4%, rgba(255,255,255,0) 6%);
+    background-size:100% 100%, 220% 100%;
+    background-position:0 0, var(--tile-x,50%) 0;
+    mix-blend-mode:soft-light;
+    /* Kept low. The tile's job is to read as a DIFFERENT, plainer material than
+       the card; bars strong enough to see individually stop being a sheen on a
+       photograph and start being a pattern over her face. */
+    opacity:calc(.2 + .32 * var(--tile-invert,0));
+  }
+  .holo-tile__grain{background-image:var(--grain,none); background-size:96px 96px; mix-blend-mode:overlay; opacity:.2;}
+  /* A handful of faint scuffs, so the tile reads as a printed, handled surface. */
+  .holo-tile__wear{
+    background:
+      linear-gradient(74deg, rgba(255,255,255,0) 34%, rgba(255,255,255,.4) 35%, rgba(255,255,255,0) 36%),
+      linear-gradient(66deg, rgba(255,255,255,0) 61%, rgba(255,255,255,.28) 62%, rgba(255,255,255,0) 63.4%),
+      linear-gradient(-58deg, rgba(255,255,255,0) 18%, rgba(255,255,255,.22) 19%, rgba(255,255,255,0) 20%);
+    mix-blend-mode:soft-light; opacity:.28;
+  }
+  .holo-tile__vignette{
+    background:radial-gradient(120% 100% at 50% 42%, rgba(0,0,0,0) 44%, rgba(52,6,28,.32) 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.42);
+    border-radius:inherit;
+  }
+  .holo-tile__gloss{
+    background:radial-gradient(farthest-corner circle at var(--gx,50%) var(--gy,50%), rgba(255,255,255,.6) 0%, rgba(255,255,255,.12) 24%, rgba(255,255,255,0) 58%);
+    mix-blend-mode:screen; opacity:calc(.3 + .45 * var(--off,0));
+  }
+
+  /* ── THE PLAYGROUND ─────────────────────────────────────────────────────── */
+  .panel{width:100%; max-width:560px; display:flex; flex-direction:column; gap:20px;}
+  .panel-block{display:flex; flex-direction:column; gap:9px;}
+  .panel-label{font-size:10.5px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--ink-soft);}
+  .swatches{display:flex; flex-wrap:wrap; gap:7px;}
+  .swatch{
+    display:flex; align-items:center; gap:7px;
+    padding:8px 13px 8px 9px; border-radius:22px;
+    border:1px solid var(--line); background:var(--stage-lift); color:var(--ink);
+    font:600 12.5px inherit; cursor:pointer;
+    transition:border-color .18s ease, background .18s ease;
+  }
+  .swatch:hover{border-color:#5C3546;}
+  .swatch[aria-pressed="true"]{border-color:var(--accent); background:#33202C;}
+  .swatch i{width:13px; height:13px; border-radius:50%; flex-shrink:0; box-shadow:inset 0 0 0 1px rgba(0,0,0,.28);}
+  .sliders{display:flex; flex-wrap:wrap; gap:18px;}
+  .slider{flex:1 1 200px; display:flex; flex-direction:column; gap:7px;}
+  .slider-head{display:flex; justify-content:space-between; align-items:baseline; font-size:12px; color:var(--ink-soft);}
+  .slider-head b{color:var(--ink); font-variant-numeric:tabular-nums; font-weight:600;}
+  .slider input{width:100%; accent-color:var(--accent); cursor:pointer;}
+  .slider-note{font-size:11px; line-height:1.5; color:#8E7784;}
+  .actions{display:flex; flex-wrap:wrap; gap:9px; align-items:center;}
+  .btn{
+    padding:10px 15px; border-radius:11px; border:1px solid var(--line);
+    background:var(--stage-lift); color:var(--ink); font:700 12.5px inherit; cursor:pointer;
+  }
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#3A0A1E;}
+  .btn:hover{border-color:#5C3546;}
+  .btn[hidden]{display:none;}
+  .status{font-size:11.5px; color:var(--ink-soft); min-height:1.4em;}
+  .footnote{max-width:560px; font-size:11.5px; line-height:1.65; color:#8E7784;}
+  .footnote code{font-family:ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--ink-soft);}
+  button:focus-visible, input:focus-visible{outline:3px solid rgba(232,160,173,.5); outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){
+    .holo-card{transition:none;}
+  }
+  @media (max-width:520px){
+    body{padding:26px 14px 40px;}
+    .page-head p{font-size:12.5px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Holo</h1>
+  <p>An identity card that catches the light. Move across it — the foil lags behind the card, the hearts come up on the side you turned toward, and the photo flips its colours near the edge of the travel.</p>
+</div>
+
+<div class="holo-stage" id="stage">
+  <div class="holo-card" id="card" role="img"
+       aria-label="An identity card reading Kamila, my girlfriend since May 2023, with a holographic foil surface that tilts and catches the light as the pointer moves across it">
+    <div class="holo-body"></div>
+    <div class="holo-pattern"></div>
+    <div class="holo-pattern--lit"></div>
+    <div class="holo-foil"></div>
+    <div class="holo-foil--b"></div>
+    <div class="holo-foil--c"></div>
+    <div class="holo-smear"></div>
+    <div class="holo-spot"></div>
+    <div class="holo-noise"></div>
+    <div class="holo-glare"></div>
+    <div class="holo-sheen"></div>
+
+    <div class="holo-content">
+      <div class="holo-text">
+        <div class="holo-mark">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21C5.5 15.5 2 11.8 2 8.2 2 5.3 4.3 3 7.2 3 9 3 10.7 3.9 12 5.4 13.3 3.9 15 3 16.8 3 19.7 3 22 5.3 22 8.2 22 11.8 18.5 15.5 12 21Z"/></svg>
+          <span>Holo</span>
+        </div>
+        <div>
+          <p class="holo-name">Kamila</p>
+          <p class="holo-since">my girlfriend since May 2023</p>
+        </div>
+      </div>
+
+      <div class="holo-tile">
+        <div class="holo-tile__photo"></div>
+        <div class="holo-tile__photo--neg"></div>
+        <div class="holo-tile__duo"></div>
+        <div class="holo-tile__tone"></div>
+        <div class="holo-tile__foil"></div>
+        <div class="holo-tile__grain"></div>
+        <div class="holo-tile__wear"></div>
+        <div class="holo-tile__vignette"></div>
+        <div class="holo-tile__gloss"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-block">
+    <span class="panel-label" id="materialLabel">Material</span>
+    <div class="swatches" id="swatches" role="group" aria-labelledby="materialLabel"></div>
+  </div>
+
+  <div class="panel-block">
+    <span class="panel-label">Experiment</span>
+    <div class="sliders">
+      <label class="slider">
+        <span class="slider-head">Parallax <b id="parallaxOut">0.26</b></span>
+        <input type="range" id="parallax" min="0" max="1" step="0.01" value="0.26">
+        <span class="slider-note">How far the sheet travels per unit of tilt. At 1 it tracks you and reads as a gradient following a cursor; low, it sits above the print.</span>
+      </label>
+      <label class="slider">
+        <span class="slider-head">Bloom <b id="bloomOut">0.55</b></span>
+        <input type="range" id="bloom" min="0" max="1" step="0.01" value="0.55">
+        <span class="slider-note">How hard the material comes up as the card turns off face-on.</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="panel-block">
+    <div class="actions">
+      <button class="btn primary" id="tiltBtn" hidden>Use device tilt</button>
+      <button class="btn" id="resetBtn">Reset this material</button>
+    </div>
+    <span class="status" id="status"></span>
+  </div>
+</div>
+
+<p class="footnote">
+  The portrait is a drawn placeholder — drop a file at <code>holo/kamila.webp</code> and the card picks it up automatically on load.
+  Ported from the React component tree (<code>holo/engine.ts</code>, <code>holo/HoloCard.tsx</code>) to one dependency-free page; the maths is the same, and the layer stack that was in the original stylesheet is authored here from the variable contract the engine writes.
+</p>
+
+<script>
+/* ══ HOLO ═══════════════════════════════════════════════════════════════════
+   The maths and the materials behind an identity card that catches the light.
+
+   Four ideas carry the whole thing.
+
+     ONE INPUT SHAPE. Pointer and device orientation are completely different
+     signals, so both are normalised to the same { x, y } in -1..1 before
+     anything reads them. Everything downstream — tilt, foil position, glare,
+     sheen — derives from that one pair, which is why swapping input sources
+     needs no other change.
+
+     THE FOIL LAGS THE CARD. Real laminate has mass: the surface catches up to
+     the card rather than moving with it. Two followers at different stiffnesses
+     is what turns a gradient that tracks a cursor into a material.
+
+     THE PRINT NEVER CHANGES. The card is pink, and it stays pink under every
+     material. Only the foil above it changes. A preset that re-prints the card
+     is a different card; a preset that changes the foil is the same card under
+     a different laminate, which is the thing being demonstrated.
+
+     MATERIALS ARE DATA, NOT CSS. Every material is three generic layers whose
+     entire paint — image, scale, position rate, blend, filter, opacity curve —
+     comes from custom properties. The stylesheet never knows which material is
+     mounted, so adding a material is adding an object to the array below.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tiles ─────────────────────────────────────────────────────────────────
+   Inline SVG rather than files: small, no extra requests, and they cannot 404.
+   A handful of tiles is the entire asset budget for all ten materials;
+   everything else is gradients. */
+const svgUrl = (s) => `url("data:image/svg+xml,${encodeURIComponent(s.replace(/\s+/g, ' '))}")`;
+
+/** Scattered 4-point sparkles. Drawn TWICE per material at slightly different
+ *  offsets: one copy is a static field, two copies beating against each other
+ *  is what twinkles. */
+const GLITTER = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="#fff">
+  ${[[34,19,4,.54,48],[38,11,3.6,.52,39],[12,14,3.4,.91,11],[26,61,5,.79,36],[92,10,4.6,.64,13],
+     [16,33,4.4,.59,52],[62,39,3.6,.53,5],[24,66,3.4,.66,53],[46,32,4.4,.85,22],[57,52,4.6,.86,26],
+     [92,16,3.2,.88,14],[49,9,4.2,.88,52],[83,34,4,.8,52],[46,80,4.8,.74,60]]
+    .map(([x,y,r,o,a]) => `<path d="M${x} ${y-r}L${x+r*0.34} ${y}L${x} ${y+r}L${x-r*0.34} ${y}Z" opacity="${o}" transform="rotate(${a} ${x} ${y})"/>`).join('')}
+</svg>`);
+
+/** A dense star field for the deep-space materials. Small faint stars plus a
+ *  few bright ones — an even field reads as noise, not as sky. */
+const STARS = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="#fff">
+  ${[[68,78,.6,.6],[39,100,.4,.4],[26,26,.5,.5],[11,33,.5,.6],[20,7,.4,.6],[39,73,.7,.5],[10,73,.7,.5],
+     [66,30,.8,.8],[79,95,.4,.6],[73,80,.5,.4],[63,10,.7,.3],[45,48,.4,.6],[50,37,.7,.8],[89,24,.3,.5],
+     [11,71,.4,.4],[28,40,.7,.6],[30,68,.3,.4],[69,75,.4,.3],[51,66,.3,.6],[27,9,.4,.5],[47,11,.6,.8],
+     [68,7,.6,.7],[1,38,.6,.9],[93,57,.6,.9],[21,51,.3,.8],[65,21,.4,.6],[75,14,.5,.6],[26,88,.7,.9],
+     [64,68,.4,.6],[43,48,.3,.8],[15,46,.8,.6],[87,26,.5,.5],[32,37,.5,.8],[97,9,.6,.6],[41,4,.5,.5],
+     [37,59,.5,.5],[27,98,.5,.9],[17,66,.6,.7],[51,87,1.6,.95],[5,68,1.6,.95],[25,73,1.8,.95],
+     [28,15,1.4,.95],[59,44,1.3,.95],[45,55,1.6,.95]]
+    .map(([x,y,r,o]) => `<circle cx="${x}" cy="${y}" r="${r}" opacity="${o}"/>`).join('')}
+</svg>`);
+
+/** Fine monochrome noise, used to break up the flatter materials so they read
+ *  as a printed surface rather than a clean gradient. Shared by the card and
+ *  the tile — one medium, two surfaces. */
+const GRAIN = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+  <filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+  <rect width="120" height="120" filter="url(#n)" opacity=".4"/>
+</svg>`);
+
+/** THE HEART FIELD, for the reveal. Varied size, rotation and weight: a regular
+ *  lattice reads as wallpaper, where a scattered one reads as something printed
+ *  into the varnish. */
+const HEARTS = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="#fff">
+  ${[[18,20,1.5,-14,.95],[62,14,1.05,11,.68],[86,34,1.3,-6,.82],[38,46,1.75,8,1],[8,58,1.15,17,.6],
+     [70,62,1.45,-12,.9],[26,80,1.2,5,.72],[54,88,1.55,-9,.85],[92,80,.95,14,.55],[46,26,.8,22,.45]]
+    .map(([x,y,s,r,o]) => `<path opacity="${o}" transform="translate(${x} ${y}) rotate(${r}) scale(${s*0.5}) translate(-12 -12)" d="M12 21C5.5 15.5 2 11.8 2 8.2 2 5.3 4.3 3 7.2 3 9 3 10.7 3.9 12 5.4 13.3 3.9 15 3 16.8 3 19.7 3 22 5.3 22 8.2 22 11.8 18.5 15.5 12 21Z"/>`).join('')}
+</svg>`);
+
+/** The portrait placeholder. Kept abstract on purpose — it exists so the
+ *  duotone and the flip have a real luminance range to work on until a
+ *  photograph is dropped in. */
+const PORTRAIT = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="380" viewBox="0 0 300 380">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4eeeb"/><stop offset="1" stop-color="#b2a6ab"/></linearGradient>
+    <radialGradient id="lit" cx=".36" cy=".28" r=".72"><stop offset="0" stop-color="#ffffff" stop-opacity=".8"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#372c32"/><stop offset="1" stop-color="#6b5860"/></linearGradient>
+  </defs>
+  <rect width="300" height="380" fill="url(#bg)"/>
+  <rect width="300" height="380" fill="url(#lit)"/>
+  <path d="M34 380C46 298 98 266 150 266s104 32 116 114Z" fill="#8a7b83"/>
+  <rect x="131" y="210" width="38" height="72" rx="17" fill="#c9b2ac"/>
+  <ellipse cx="150" cy="150" rx="62" ry="75" fill="#e4cfc7"/>
+  <path d="M88 152c-6-60 22-90 62-90s68 30 62 90c0-33-22-51-62-51s-62 18-62 51Z" fill="url(#hair)"/>
+  <path d="M86 148c-12 48-8 88 6 114-6-52 0-86 8-108Z" fill="url(#hair)"/>
+  <path d="M214 148c12 48 8 88-6 114 6-52 0-86-8-108Z" fill="url(#hair)"/>
+  <ellipse cx="128" cy="150" rx="6.5" ry="4.2" fill="#5b4850" opacity=".55"/>
+  <ellipse cx="172" cy="150" rx="6.5" ry="4.2" fill="#5b4850" opacity=".55"/>
+  <path d="M135 186q15 11 30 0" stroke="#a5767d" stroke-width="5" fill="none" stroke-linecap="round" opacity=".7"/>
+  <ellipse cx="119" cy="119" rx="26" ry="35" fill="#ffffff" opacity=".16"/>
+</svg>`);
+
+/** Where a real photograph goes, if one is there. */
+const TILE_PHOTO = 'holo/kamila.webp';
+
+/** The six spectral hues the foil runs through. High value, high saturation:
+ *  each layer's filter crushes them hard, so starting from anything muted
+ *  leaves nothing to crush. */
+const S = [
+  'hsl(2, 100%, 73%)',
+  'hsl(53, 100%, 69%)',
+  'hsl(93, 100%, 69%)',
+  'hsl(176, 100%, 76%)',
+  'hsl(228, 100%, 74%)',
+  'hsl(283, 100%, 73%)',
+];
+
+/** A repeating spectral ramp at a given angle and pitch. The workhorse: most
+ *  materials are this plus one or two other layers. */
+function rainbow(angle, space, hues = S) {
+  const stops = hues
+    .map((c, i) => `${c} calc(${space} * ${i + 1})`)
+    .concat(`${hues[0]} calc(${space} * ${hues.length + 1})`)
+    .join(', ');
+  return `repeating-linear-gradient(${angle}, ${stops})`;
+}
+
+/* ── THE MATERIALS ──────────────────────────────────────────────────────────
+   Ten genuinely different TECHNIQUES — a sparkle field, a conic swirl, crossed
+   grayscale ramps, a multi-scale stack — rather than one gradient in ten
+   colourways.
+
+   Per LAYER: `rate` is how fast it slides per unit of tilt (NEGATIVE runs it
+   against the pointer, which is how two layers of one material come apart);
+   `base` is opacity at rest and `gain` is what tilt ADDS (negative fades a
+   layer OUT, handing the surface to the layer above rather than piling both on).
+
+   Per MATERIAL: `parallax` is how far the whole sheet travels — the single most
+   important number in the effect — and `bloom` is how hard it comes up off
+   face-on. `dot` is only the swatch colour in the picker.                    */
+const FOILS = [
+  {
+    // The default. Three layers rather than one: a single desaturated sheet
+    // reads as a sheen, where a real holo has actual COLOUR in it — bands you
+    // can name, moving against each other as the angle changes.
+    key: 'holo', label: 'Holo', dot: 'linear-gradient(120deg,#ff8f9c,#ffe98a,#8ef0d8,#a8b6ff)',
+    layers: [
+      {
+        // The main spectral sheet. Saturation stays UP: on a pale print there is
+        // nothing to overwhelm, and pulling it down leaves the card grey.
+        img: rainbow('10deg', '8%'), size: '380% 380%', rate: 1,
+        blend: 'overlay', filter: 'brightness(1.08) contrast(2.3) saturate(1.5)', base: 0.26, gain: 0.6,
+      },
+      {
+        // A second sheet at a crossing angle, a coarser pitch and running
+        // BACKWARDS. Where the two disagree they beat against each other, which
+        // is what produces the shifting, oily quality a single sheet cannot —
+        // one sheet only ever slides, two interfere.
+        img: rainbow('104deg', '13%'), size: '300% 300%', rate: -0.7,
+        blend: 'color-dodge', filter: 'brightness(.82) contrast(2) saturate(1.7)', base: 0.14, gain: 0.34,
+      },
+      {
+        // Fine diffraction lines. Real foil is iridescent BECAUSE it is
+        // physically ridged, and without any structure the colour reads as a
+        // filter over the card rather than as light coming off a surface.
+        img: 'repeating-linear-gradient(96deg, rgba(255,255,255,.5) 0px, rgba(255,255,255,0) 2px, rgba(0,0,0,.16) 3px, rgba(255,255,255,0) 5px)',
+        size: 'auto', rate: 1.8, blend: 'overlay', filter: 'contrast(1.3)', base: 0.1, gain: 0.26,
+      },
+    ],
+    parallax: 0.26, bloom: 0.55, glare: 0.55,
+  },
+  {
+    // Almost no gradient at all — the material IS the sparkle field, and the two
+    // offset copies are what make it twinkle rather than sit still.
+    key: 'glitter', label: 'Glitter', dot: 'linear-gradient(120deg,#fff6d8,#ffd9ec,#cfe4ff)',
+    layers: [
+      {
+        img: `${GLITTER}, ${GLITTER}`, size: '26% 26%, 19% 19%', rate: 0.5,
+        bgBlend: 'soft-light', blend: 'color-dodge', filter: 'brightness(1.1) contrast(1.6) saturate(1.2)', base: 0.3, gain: 0.55,
+      },
+      {
+        img: rainbow('122deg', '13%'), size: '320% 320%', rate: 1.4,
+        blend: 'overlay', filter: 'brightness(1) contrast(2) saturate(.8)', base: 0.16, gain: 0.34,
+      },
+    ],
+    parallax: 0.3, bloom: 0.6, glare: 0.6,
+  },
+  {
+    // Two grayscale bar ramps crossed at +/-45deg. `exclusion` between them is
+    // the trick: where the ramps agree they cancel toward black, where they
+    // disagree they light up, so the crossings sparkle without any colour in the
+    // layer at all.
+    key: 'prism', label: 'Prism', dot: 'linear-gradient(45deg,#2b2b2b,#dcdcdc,#2b2b2b,#dcdcdc)',
+    layers: [
+      {
+        img:
+          'repeating-linear-gradient(45deg, hsl(0,0%,10%) 0%, hsl(0,0%,22%) 1.4%, hsl(0,0%,42%) 2.6%, hsl(0,0%,50%) 3.4%, hsl(0,0%,32%) 4.6%, hsl(0,0%,8%) 6%), ' +
+          'repeating-linear-gradient(-45deg, hsl(0,0%,10%) 0%, hsl(0,0%,24%) 1.6%, hsl(0,0%,46%) 3%, hsl(0,0%,52%) 3.8%, hsl(0,0%,28%) 5.2%, hsl(0,0%,8%) 6.6%)',
+        size: '210% 210%, 190% 190%', rate: 1.5,
+        bgBlend: 'exclusion', blend: 'color-dodge', filter: 'brightness(.62) contrast(2.2) saturate(1.6)', base: 0.3, gain: 0.5,
+      },
+      {
+        img: rainbow('55deg', '16%'), size: '400% 100%', rate: -2.5,
+        blend: 'color-dodge', filter: 'brightness(.6) contrast(2.4) saturate(1.7)', base: 0.2, gain: 0.4,
+      },
+    ],
+    parallax: 0.24, bloom: 0.55, glare: 0.52,
+  },
+  {
+    // A conic reads completely differently from a linear ramp: the spectrum
+    // wraps around a point instead of running across, so tilting SPINS the
+    // colour rather than sliding it.
+    key: 'conic', label: 'Conic', dot: `conic-gradient(${S[3]},${S[4]},${S[5]},${S[0]},${S[1]},${S[2]},${S[3]})`,
+    layers: [
+      {
+        img: `conic-gradient(from var(--spin, 0deg) at 50% 50%, ${S[3]}, ${S[4]}, ${S[5]}, ${S[0]}, ${S[1]}, ${S[2]}, ${S[3]})`,
+        size: 'cover', rate: 0, blend: 'color-dodge', filter: 'brightness(.55) contrast(1.5) saturate(2.4)', base: 0.22, gain: 0.42,
+      },
+      {
+        img: `${GLITTER}, ${GLITTER}`, size: '24% 24%, 17% 17%', rate: 0.7,
+        bgBlend: 'hard-light', blend: 'color-dodge', filter: 'brightness(1.05) contrast(1.5)', base: 0.26, gain: 0.5,
+      },
+    ],
+    parallax: 0.22, bloom: 0.5, glare: 0.58,
+  },
+  {
+    // Three star plates at different scales and rates over a wide spectrum. The
+    // rate spread is the whole effect: near stars sweep, far stars barely move,
+    // and the card gains real depth.
+    key: 'cosmos', label: 'Cosmos', dot: 'radial-gradient(circle at 30% 30%,#fff,#8fa7ff 40%,#2a1b4a)',
+    layers: [
+      {
+        img: `${STARS}, ${rainbow('82deg', '8%')}`, size: '38% 38%, 420% 900%', rate: 0.35,
+        bgBlend: 'color-burn', blend: 'color-dodge', filter: 'brightness(1) contrast(1.6) saturate(.9)', base: 0.28, gain: 0.45,
+      },
+      { img: STARS, size: '22% 22%', rate: 1.6, blend: 'overlay', filter: 'brightness(1.3) contrast(1.7)', base: 0.2, gain: 0.4 },
+      { img: STARS, size: '13% 13%', rate: 2.6, blend: 'overlay', filter: 'brightness(1.1) contrast(1.5)', base: 0.12, gain: 0.3 },
+    ],
+    parallax: 0.34, bloom: 0.55, glare: 0.46,
+  },
+  {
+    // Two full spectra at different angles, one muted and running BACKWARDS
+    // (rate -1.5). Where they cross they interfere, which is what gives this one
+    // its oily, shifting quality.
+    key: 'rainbow', label: 'Rainbow', dot: 'linear-gradient(90deg,#c26bd6,#e46a6a,#d9c15a,#7bc25e,#5ab7b7,#7f9bff)',
+    layers: [
+      {
+        img: rainbow('0deg', '14%', [
+          'hsla(283,49%,60%,.75)', 'hsla(2,70%,58%,.75)', 'hsla(53,67%,53%,.75)',
+          'hsla(93,56%,52%,.75)', 'hsla(176,38%,50%,.75)', 'hsla(228,100%,77%,.75)',
+        ]),
+        size: '200% 400%', rate: 1, blend: 'color-dodge', filter: 'brightness(.9) contrast(2.6) saturate(1.6)', base: 0.24, gain: 0.44,
+      },
+      {
+        img: 'linear-gradient(-30deg, hsl(0,57%,37%), hsl(40,53%,39%), hsl(90,60%,35%), hsl(180,60%,35%), hsl(210,57%,39%), hsl(280,55%,31%), hsl(0,57%,37%))',
+        size: '400% 400%', rate: -1.5, blend: 'color-dodge', filter: 'brightness(1.1) contrast(2) saturate(1.2)', base: 0.3,
+        // Fades OUT as the card turns, handing the surface to the layer above
+        // rather than both piling on.
+        gain: -0.18,
+      },
+    ],
+    parallax: 0.3, bloom: 0.5, glare: 0.5,
+  },
+  {
+    // A very tall, very narrow gradient (200% x 700%) reads as a vertical STREAK
+    // rather than a field.
+    key: 'refractor', label: 'Refractor', dot: 'linear-gradient(150deg,#8ef0e6,#8fc9ff,#8f9dff)',
+    layers: [
+      {
+        img: rainbow('125deg', '7%', [
+          'hsl(176,100%,76%)', 'hsl(196,100%,78%)', 'hsl(214,100%,76%)',
+          'hsl(228,100%,74%)', 'hsl(200,100%,80%)', 'hsl(168,100%,78%)',
+        ]),
+        size: '200% 700%', rate: 1.2,
+        // NOT `hue`: that would take the sheet's hue and DISCARD the backdrop's,
+        // turning a flat pink print blue-grey. The tall narrow gradient is what
+        // makes this read as a streak; the blend just has to let the print through.
+        blend: 'color-dodge', filter: 'brightness(.7) contrast(1.8) saturate(1.9)', base: 0.22, gain: 0.4,
+      },
+      {
+        img: 'repeating-linear-gradient(100deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 1.2%, rgba(0,0,0,.25) 2.2%, rgba(255,255,255,0) 3.4%)',
+        size: '300% 100%', rate: -0.8, blend: 'hard-light', filter: 'brightness(1.05) contrast(1.4)', base: 0.18, gain: 0.36,
+      },
+    ],
+    parallax: 0.18, bloom: 0.55, glare: 0.64,
+  },
+  {
+    // A multi-scale stack: 1100% / 600% in one layer. `difference` on
+    // near-identical ramps is what produces the dark oily banding.
+    key: 'velvet', label: 'Velvet', dot: 'linear-gradient(120deg,#1d2140,#6f4f8f,#b6708f,#2a2b4d)',
+    layers: [
+      {
+        img: `${rainbow('-33deg', '6%')}, ${rainbow('133deg', '3%', ['hsla(227,53%,12%,.5)', 'hsl(180,10%,50%)', 'hsl(83,50%,35%)', 'hsl(180,10%,50%)', 'hsla(227,53%,12%,.5)', 'hsla(227,53%,12%,.5)'])}`,
+        size: '1100% 1100%, 600% 600%', rate: 1,
+        bgBlend: 'difference', blend: 'color-dodge', filter: 'brightness(.75) contrast(2) saturate(1.1)', base: 0.3, gain: 0.48,
+      },
+      {
+        img: 'radial-gradient(farthest-corner circle at var(--gx,50%) var(--gy,50%), hsla(189,76%,77%,.6) 0%, hsla(147,59%,77%,.6) 25%, hsla(271,55%,69%,.6) 50%, hsla(355,56%,72%,.6) 75%)',
+        size: '200% 200%', rate: 0.4, blend: 'soft-light', filter: 'saturate(1.5)', base: 0.4, gain: 0.3,
+      },
+    ],
+    parallax: 0.28, bloom: 0.6, glare: 0.5,
+  },
+  {
+    // `exclusion` inverts the surface where the sheet is bright, so this one
+    // goes COLD and slightly negative at the extremes rather than brightening.
+    key: 'ice', label: 'Ice', dot: 'linear-gradient(140deg,#dff4ff,#b6ddff,#cdd2ff)',
+    layers: [
+      {
+        img: rainbow('115deg', '10%', [
+          'hsl(190,90%,80%)', 'hsl(210,85%,82%)', 'hsl(230,80%,80%)',
+          'hsl(250,70%,82%)', 'hsl(200,90%,85%)', 'hsl(175,80%,82%)',
+        ]),
+        size: '300% 300%', rate: 1.1,
+        // `exclusion` INVERTS what is under it, which is this material's whole
+        // character. But it inverts the print too, so the opacity has to stay
+        // low enough that the card is still pink underneath — past ~0.35 here
+        // the card turns beige and stops being the same card.
+        blend: 'exclusion', filter: 'brightness(.8) contrast(1.6) saturate(1.3)', base: 0.12, gain: 0.22,
+      },
+      {
+        img: `${GRAIN}, ${GLITTER}`, size: '38% 38%, 22% 22%', rate: 0.6,
+        bgBlend: 'overlay', blend: 'hard-light', filter: 'brightness(1.1) contrast(1.3)', base: 0.18, gain: 0.34,
+      },
+    ],
+    parallax: 0.2, bloom: 0.5, glare: 0.62,
+  },
+  {
+    // The restrained one: a fine near-neutral pitch that only barely shifts. The
+    // only material that flatters the photograph rather than competing with it,
+    // and the one to reach for if the card has to be read.
+    key: 'brushed', label: 'Brushed', dot: 'linear-gradient(100deg,#efe4d8,#dfe8ee,#e3dfee,#efe7dd)',
+    layers: [
+      {
+        img: rainbow('94deg', '4%', [
+          'hsl(30,40%,86%)', 'hsl(200,30%,88%)', 'hsl(260,25%,87%)',
+          'hsl(180,25%,89%)', 'hsl(40,30%,88%)', 'hsl(220,25%,87%)',
+        ]),
+        size: '260% 260%', rate: 0.8, blend: 'soft-light', filter: 'brightness(1.02) contrast(1.7) saturate(.55)', base: 0.34, gain: 0.3,
+      },
+      { img: GRAIN, size: '34% 34%', rate: 0.3, blend: 'overlay', filter: 'brightness(1) contrast(1.1)', base: 0.14, gain: 0.16 },
+    ],
+    parallax: 0.13, bloom: 0.32, glare: 0.34,
+  },
+];
+
+/** Maximum tilt at the card's edge. Small: past ~16deg the perspective
+ *  distortion starts to read as a fold rather than a tilt. */
+const MAX_TILT = 14;
+/** How many foil layers the CSS provides. A material with fewer simply leaves
+ *  the rest empty. */
+const LAYER_SLOTS = 3;
+
+/** Remap a value from one range onto another. Nearly every derived figure below
+ *  goes through this, which is what keeps them all in agreement. */
+function adjust(v, fromMin, fromMax, toMin, toMax) {
+  return toMin + ((toMax - toMin) * (v - fromMin)) / (fromMax - fromMin);
+}
+function clamp(v, min = -1, max = 1) { return Math.min(Math.max(v, min), max); }
+
+/**
+ * A damped follower.
+ *
+ * Not a spring with overshoot — a simple exponential ease toward a target, run
+ * per frame. Overshoot is wrong here: a card settling should look like weight,
+ * not like a bounce, and a bouncing card immediately reads as a web animation
+ * rather than as an object.
+ *
+ * `stiffness` is the fraction of the remaining distance covered each frame, so
+ * a lower number is heavier.
+ */
+class Follow {
+  constructor(stiffness) {
+    this.stiffness = stiffness;
+    this.value = { x: 0, y: 0 };
+    this.target = { x: 0, y: 0 };
+    /* How far this follower moved on the last frame. Position alone cannot tell
+       whether you are creeping across the card or whipping past it, and a
+       material that responds identically to both does not read as physical.
+       It is simply the per-frame delta rather than a separate integrator: the
+       follower is already an exponential ease, so its delta is proportional to
+       the distance still to cover, which is exactly the "effort" signal wanted. */
+    this.velocity = { x: 0, y: 0 };
+    /* Smoothed magnitude of that velocity. Raw per-frame deltas are spiky enough
+       to make anything driven by them flicker, so consumers read this instead. */
+    this.speed = 0;
+  }
+
+  step() {
+    const px = this.value.x, py = this.value.y;
+    this.value.x += (this.target.x - this.value.x) * this.stiffness;
+    this.value.y += (this.target.y - this.value.y) * this.stiffness;
+    this.velocity.x = this.value.x - px;
+    this.velocity.y = this.value.y - py;
+    // Asymmetric smoothing: rises fast so a flick registers on the frame it
+    // happens, falls slowly so the streak it leaves decays instead of snapping
+    // off the moment the pointer stops. A symmetric filter gives you one or the
+    // other, never both.
+    const raw = Math.min(1, Math.hypot(this.velocity.x, this.velocity.y) * 14);
+    this.speed += (raw - this.speed) * (raw > this.speed ? 0.45 : 0.06);
+  }
+
+  /** True once it has effectively arrived, so a caller can stop its rAF loop
+   *  rather than burning frames on sub-pixel movement forever. Velocity is part
+   *  of the test: a follower can sit on its target for one frame mid-overshoot,
+   *  and stopping there would freeze the card off-centre. */
+  get settled() {
+    return Math.abs(this.target.x - this.value.x) < 0.0006
+      && Math.abs(this.target.y - this.value.y) < 0.0006
+      && this.speed < 0.004;
+  }
+}
+
+/**
+ * A one-shot overshoot, for the moment the pointer leaves.
+ *
+ * Real objects do not glide to a stop along the shortest path — they carry past
+ * a little on the axis they were pushed and settle back.
+ *
+ * Deliberately NOT a spring on the main follower: a spring rings on every
+ * movement, and a card that wobbles whenever you nudge it reads as a web
+ * animation. This fires once, scaled by how fast you were going, and decays to
+ * nothing.
+ */
+class Kick {
+  constructor() { this.amount = { x: 0, y: 0 }; this.life = 0; }
+
+  /** Fire it. `v` is the velocity at the moment of release. */
+  fire(v, gain = 2.6) {
+    const mag = Math.hypot(v.x, v.y);
+    // Below a threshold there was no throw — just a pointer leaving the box —
+    // and adding a bounce there would look like a twitch.
+    if (mag < 0.002) return;
+    this.amount = { x: v.x * gain, y: v.y * gain };
+    this.life = 1;
+  }
+
+  /** Advance and return the current offset to add to the target. */
+  step() {
+    if (this.life <= 0) return { x: 0, y: 0 };
+    this.life = Math.max(0, this.life - 0.035);
+    // A half sine over the life: rises to the overshoot, returns through zero.
+    // Ending at exactly zero is the point — a decaying oscillation would leave
+    // the card fractionally off true.
+    const e = Math.sin(this.life * Math.PI) * this.life;
+    return { x: this.amount.x * e, y: this.amount.y * e };
+  }
+
+  get active() { return this.life > 0; }
+}
+
+/**
+ * Device orientation, zeroed on the first reading.
+ *
+ * THIS IS THE DETAIL THAT MAKES TILT USABLE. Absolute orientation is useless
+ * because nobody holds a phone flat — beta sits somewhere around 40-70deg for a
+ * person looking at a screen, so an un-zeroed reading pins the card to one
+ * corner and it never comes back. Taking the first event as the origin means the
+ * card responds to how far you have tilted FROM WHERE YOU ALREADY WERE.
+ */
+class Orientation {
+  constructor() {
+    this.base = null;
+    /* Degrees of tilt that maps to the full -1..1 range. Small, because wrist
+       movement is small: at 45deg you would have to turn the phone over. */
+    this.range = 22;
+  }
+  read(e) {
+    const beta = e.beta, gamma = e.gamma;
+    if (beta == null || gamma == null) return null;
+    if (!this.base) { this.base = { beta, gamma }; return { x: 0, y: 0 }; }
+    return {
+      x: clamp((gamma - this.base.gamma) / this.range),
+      y: clamp((beta - this.base.beta) / this.range),
+    };
+  }
+  /** Re-zero, e.g. when the card comes back on screen and the phone has moved. */
+  reset() { this.base = null; }
+}
+
+/** Pointer position within an element, normalised to -1..1 from its centre. */
+function fromPointer(rect, cx, cy) {
+  return {
+    x: clamp(((cx - rect.left) / rect.width) * 2 - 1),
+    y: clamp(((cy - rect.top) / rect.height) * 2 - 1),
+  };
+}
+
+/* The card's print. Fixed for every material.
+ *
+ * A pale blush rather than a hot magenta. The saturated version fought
+ * everything on top of it: type had to shout to stay legible, the foil's own
+ * colours were swamped because the print was already at full chroma, and the
+ * hearts had nowhere to go — there is no "lighter" available above a colour that
+ * bright. Dropping the saturation and lifting the value gives every layer above
+ * room to read, and a soft pink is the kawaii register anyway; a hot one is a
+ * warning label. */
+const BODY = ['#ffd9e8', '#fcc2dc', '#f7aecf', '#f9bcc9'];
+
+/* The photo tile's two inks: [dark, light].
+ *
+ * A muted mulberry and a warm blush-white, both pulled well back from full
+ * chroma. A saturated pink-and-blue pair reads as a poster stamped onto a
+ * watercolour: the card is a soft, low-saturation print, and anything at full
+ * chroma next to it looks like it came from a different piece of software.
+ *
+ * They still differ clearly in VALUE, which is what the flip trades — that
+ * separation has to survive the desaturation or there is nothing to swap. */
+const TILE = ['#8e3a63', '#f0d3e2'];
+
+/**
+ * Push a material's static (non-per-frame) variables onto the card.
+ *
+ * Separate from `applyFrame` because these only change when the preset does, and
+ * re-writing two dozen properties every frame would be pure waste.
+ *
+ * Unused layer slots are explicitly blanked rather than left alone: switching
+ * from a 3-layer material to a 1-layer one has to CLEAR the old slots, or the
+ * previous material's second and third layers stay painted underneath the new
+ * one and every preset after the first is a blend of two materials.
+ */
+function applyFoil(card, foil) {
+  const s = card.style;
+  s.setProperty('--body-grad', `linear-gradient(115deg, ${BODY.join(', ')})`);
+  s.setProperty('--tile-dark', TILE[0]);
+  s.setProperty('--tile-light', TILE[1]);
+  s.setProperty('--glare-o', String(foil.glare));
+  s.setProperty('--heart-tile', HEARTS);
+  s.setProperty('--grain', GRAIN);
+
+  for (let i = 0; i < LAYER_SLOTS; i++) {
+    const n = `--l${i + 1}`;
+    const L = foil.layers[i];
+    if (!L) {
+      // `none` rather than an empty string: an empty background-image is invalid
+      // and falls back to the property's initial value, which in a stacked
+      // context can resolve to the previous declaration.
+      s.setProperty(`${n}-img`, 'none');
+      s.setProperty(`${n}-o`, '0');
+      continue;
+    }
+    s.setProperty(`${n}-img`, L.img);
+    s.setProperty(`${n}-size`, L.size);
+    s.setProperty(`${n}-bgblend`, L.bgBlend ?? 'normal');
+    s.setProperty(`${n}-blend`, L.blend);
+    s.setProperty(`${n}-filter`, L.filter);
+  }
+}
+
+/**
+ * Write one frame's worth of CSS variables onto the card element.
+ *
+ * `tilt` drives everything attached to the card's own geometry (the rotation,
+ * the bar angle, the glare) and `sheet` drives the foil, which lags behind it.
+ * `live` carries the two numbers the playground can override — the rest of the
+ * material is fixed data.
+ */
+function applyFrame(card, tilt, sheet, foil, live, motion = {}) {
+  const { x, y } = tilt;
+  const s = card.style;
+
+  s.setProperty('--rx', `${(-y * MAX_TILT).toFixed(2)}deg`);
+  s.setProperty('--ry', `${(x * MAX_TILT).toFixed(2)}deg`);
+
+  // THE COMPRESSED RANGE. The foil travels a fraction of the pointer's own
+  // distance — a sheet that tracks 1:1 reads as a following gradient, where one
+  // that barely moves reads as a layer sitting above the print. This is the
+  // single most important number in the effect.
+  const p = live.parallax;
+
+  // EACH LAYER MOVES AT ITS OWN RATE, and some move against the pointer. Two
+  // layers travelling together are just one thicker layer; it is the
+  // disagreement between them that reads as depth and as shimmer.
+  for (let i = 0; i < LAYER_SLOTS; i++) {
+    const L = foil.layers[i];
+    if (!L) continue;
+    const t = p * L.rate;
+    const n = `--l${i + 1}`;
+    s.setProperty(`${n}-x`, `${adjust(sheet.x, -1, 1, 50 - t * 100, 50 + t * 100).toFixed(1)}%`);
+    s.setProperty(`${n}-y`, `${adjust(sheet.y, -1, 1, 50 - t * 100, 50 + t * 100).toFixed(1)}%`);
+  }
+
+  // HOW FAR FROM FACE-ON, 0..1 — and the card's whole decoration budget. The
+  // pattern, the bars and the foil all buy their opacity out of this, so a card
+  // at rest is a clean printed surface and a card being turned is alive.
+  //
+  // It is a DISTANCE, so it is symmetric: tilting left and tilting right give the
+  // same value, and the decoration comes up the same way whichever side you move
+  // to. Driving it off a signed axis instead would light one side and leave the
+  // other dead, which is the thing that looked broken.
+  const off = Math.min(1, Math.hypot(x, y));
+  s.setProperty('--off', off.toFixed(3));
+
+  // THE HEARTS ONLY SHOW AT AN ANGLE.
+  //
+  // Not a fade from zero — a THRESHOLD. Below `HEART_FROM` the card is perfectly
+  // clean, and past it the hearts ramp in over the remaining travel. That gap is
+  // the whole point: a decoration that is always slightly visible is just
+  // decoration, where one that is absent and then arrives reads as something the
+  // surface was hiding until it caught the light. Smoothstep rather than a linear
+  // ramp, so it eases in at the threshold instead of switching on with a corner.
+  //
+  // Driven by the SHEET, not the card. The sheet is the heavier follower, so the
+  // hearts inherit its lag for free and can never appear in a single frame — and
+  // it is the physically right source anyway, since a varnish catching light
+  // belongs to the surface rather than to the card's own geometry.
+  const softOff = Math.min(1, Math.hypot(sheet.x, sheet.y));
+  const HEART_FROM = 0.34;
+  const t = Math.max(0, Math.min(1, (softOff - HEART_FROM) / (1 - HEART_FROM)));
+  s.setProperty('--reveal', (t * t * (3 - 2 * t) * 0.9).toFixed(3));
+
+  // AND ONLY WHERE THE LIGHT IS.
+  //
+  // Revealing the whole field at once was the other half of the bug: tilt the
+  // left edge toward you and hearts appeared across the entire card, including
+  // the far side that is angled AWAY and should be catching nothing. A varnish is
+  // only visible where light is actually striking it, so the layer is masked to a
+  // soft band that follows the tilt — the hearts surface on the side you turned
+  // toward you and stay hidden on the other.
+  //
+  // The mask's angle points along the tilt direction and its centre rides out
+  // toward that edge, so the band travels across the card as you move rather than
+  // fading up in place. Same lagged source as the opacity above: reading the fast
+  // tilt here while the opacity eased on the slow one made the band swing into
+  // place before the hearts had faded up, which reads as two separate things.
+  const ang = Math.atan2(sheet.y, sheet.x) * (180 / Math.PI);
+  s.setProperty('--reveal-angle', `${(ang + 90).toFixed(0)}deg`);
+  s.setProperty('--reveal-x', `${adjust(sheet.x, -1, 1, 78, 22).toFixed(1)}%`);
+  s.setProperty('--reveal-y', `${adjust(sheet.y, -1, 1, 78, 22).toFixed(1)}%`);
+
+  // THE SWEET SPOT.
+  //
+  // Real foil has one angle where the whole surface lines up and goes brilliant,
+  // and hunting for it is most of why anyone keeps turning a card. It sits
+  // off-centre on purpose — the middle is where the card rests, and a bloom you
+  // get for free is not worth finding.
+  //
+  // The falloff is deliberately tight: a wide one just makes the card brighter on
+  // one side, where a narrow one means you sweep past it, notice, and come back.
+  const SPOT = { x: -0.42, y: -0.36 };
+  const dSpot = Math.hypot(sheet.x - SPOT.x, sheet.y - SPOT.y);
+  const hit = Math.max(0, 1 - dSpot / 0.34);
+  const spotBloom = hit * hit * (3 - 2 * hit);
+  s.setProperty('--spot', spotBloom.toFixed(3));
+
+  // A very slow resting cycle, so the material is alive while the card is
+  // untouched. Two incommensurate periods, so it never visibly loops.
+  const time = motion.time ?? 0;
+  const breathNow = 0.5 + 0.5 * Math.sin(time * 0.5) * Math.cos(time * 0.31);
+  s.setProperty('--breath', breathNow.toFixed(3));
+
+  // Per-layer opacity. `base` is what the layer shows face-on and `gain` is what
+  // tilt ADDS — gain may be negative, which fades a layer out as the card turns
+  // so the material hands off between its layers instead of piling both on.
+  for (let i = 0; i < LAYER_SLOTS; i++) {
+    const L = foil.layers[i];
+    if (!L) continue;
+    let o = Math.max(0, L.base + off * L.gain * (live.bloom / 0.5));
+    // The sweet spot lifts every layer at once — that simultaneity is what makes
+    // it read as the material aligning rather than one sheet brightening,
+    o *= 1 + spotBloom * 0.85;
+    // and the resting breath moves it very slightly, so a still card is not a
+    // frozen one.
+    o *= 0.94 + breathNow * 0.06;
+    s.setProperty(`--l${i + 1}-o`, Math.min(1, o).toFixed(3));
+  }
+
+  // The conic material spins rather than slides: its spectrum wraps around a
+  // point, so the equivalent of sliding a linear ramp is turning the start angle.
+  // Harmless for every other material, which never reads it.
+  s.setProperty('--spin', `${(sheet.x * 90 + sheet.y * 45).toFixed(1)}deg`);
+
+  // The glare tracks the pointer DIRECTLY, with no lag — a highlight is simply
+  // where the light is, so lagging it would look like a mistake.
+  s.setProperty('--gx', `${adjust(x, -1, 1, 12, 88).toFixed(1)}%`);
+  s.setProperty('--gy', `${adjust(y, -1, 1, 12, 88).toFixed(1)}%`);
+
+  // The tile drifts very slightly against the card face, so the two planes read
+  // as separate. A quarter of the foil's travel: enough to separate them, not
+  // enough to look detached.
+  s.setProperty('--tile-x', `${adjust(sheet.x, -1, 1, 58, 42).toFixed(1)}%`);
+
+  // THE TILE FLIPS.
+  //
+  // The two inks trade places as the card turns: the photograph is the same, its
+  // polarity is not.
+  //
+  // LINEAR, BUT STARTING FROM OUT NEAR THE EDGE. Two separate properties, and
+  // they must not be conflated:
+  //
+  //   WHERE it starts — the inner half of the travel does nothing, so the
+  //   photograph reads as plainly herself while the card is near rest. Driving it
+  //   from 0 lets the resting drift alone keep her partly inverted, which is not
+  //   a resting state.
+  //
+  //   HOW it progresses — strictly LINEAR. Every millimetre past the threshold
+  //   buys the same amount of sweep, so the mask stays locked to the pointer
+  //   rather than playing back an eased transition.
+  const FLIP_FROM = 0.52;
+  const flip = Math.max(0, Math.min(1, (softOff - FLIP_FROM) / (1 - FLIP_FROM)));
+  s.setProperty('--tile-invert', flip.toFixed(3));
+  // The inverted state's hue travels as the flip progresses, so the tile tours a
+  // range of the spectrum instead of landing on one fixed colour — which is what
+  // separates "holographic" from "tinted".
+  s.setProperty('--tile-hue', `${(150 + flip * 120).toFixed(0)}deg`);
+  // The sweep enters from whichever side you are turning toward, so the edge
+  // travels across her face in the direction of the movement rather than always
+  // wiping the same way.
+  s.setProperty('--tile-sweep-angle', `${(Math.atan2(sheet.y, sheet.x) * (180 / Math.PI) + 90).toFixed(0)}deg`);
+
+  // ── MOTION ────────────────────────────────────────────────────────────────
+  const speed = motion.speed ?? 0;
+  const vel = motion.velocity ?? { x: 0, y: 0 };
+  s.setProperty('--speed', speed.toFixed(3));
+
+  // THE STREAK. A fast pass smears the highlight along the direction of travel; a
+  // slow one leaves it round. This is the clearest read of velocity on the card,
+  // and it costs one gradient angle plus a length.
+  const vmag = Math.hypot(vel.x, vel.y);
+  if (vmag > 0.0001) {
+    s.setProperty('--smear-angle', `${(Math.atan2(vel.y, vel.x) * (180 / Math.PI)).toFixed(0)}deg`);
+  }
+  s.setProperty('--smear', (Math.min(1, speed) * 0.8).toFixed(3));
+
+  // EMBOSSING. The type takes its highlight from the opposite side to the shadow,
+  // both driven by tilt, so the letters catch light like they were pressed into
+  // the stock. Under a pixel of travel: an emboss you can measure is a bevel.
+  s.setProperty('--emboss-x', `${(-x * 0.9).toFixed(2)}px`);
+  s.setProperty('--emboss-y', `${(-y * 0.9).toFixed(2)}px`);
+
+  // EDGE CATCH. Each border lights independently by how much it faces the
+  // viewer, so the card reads as having thickness instead of a uniform rim.
+  s.setProperty('--edge-l', Math.max(0, -x).toFixed(3));
+  s.setProperty('--edge-r', Math.max(0, x).toFixed(3));
+  s.setProperty('--edge-t', Math.max(0, -y).toFixed(3));
+  s.setProperty('--edge-b', Math.max(0, y).toFixed(3));
+}
+
+/* ══ THE PLAYGROUND ═════════════════════════════════════════════════════════
+   The card is display-only; everything below — the ten materials, the sliders
+   and the device-tilt opt-in — is the playground around it. */
+(function () {
+  const stage = document.getElementById('stage');
+  const card = document.getElementById('card');
+  const status = document.getElementById('status');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let foil = FOILS[0];
+  /** The two numbers the sliders own. The rest of the material is fixed data, so
+   *  overriding these needs no clone of the preset. */
+  const live = { parallax: foil.parallax, bloom: foil.bloom };
+
+  /* If a real photograph is sitting at holo/kamila.webp, use it; otherwise the
+     drawn placeholder stands in. Probing rather than assuming keeps the page
+     working as a self-contained file with no assets beside it. */
+  card.style.setProperty('--tile-src', PORTRAIT);
+  const probe = new Image();
+  probe.onload = () => card.style.setProperty('--tile-src', `url("${TILE_PHOTO}")`);
+  probe.src = TILE_PHOTO;
+
+  applyFoil(card, foil);
+
+  // Two followers at different weights. The card tracks quickly; the foil is
+  // heavier and arrives a few frames later, so the surface catches up to the card
+  // rather than moving with it. That lag is most of what separates this from a
+  // gradient following a cursor.
+  const tilt = new Follow(0.16);
+  const sheet = new Follow(0.09);
+  /** Fires once when the pointer leaves, carrying the speed you left at. */
+  const kick = new Kick();
+  /** Wall-clock seconds since mount, for the resting cycles. */
+  const t0 = performance.now();
+
+  let raf = 0;
+  let running = false;
+  let onScreen = false;
+  let hidden = false;
+  /** A slow wander when untouched, so the card is alive before you reach it. */
+  let idle = 0;
+  let touched = false;
+  /** How far through the return-to-rest blend we are, 0..1. */
+  let release = 1;
+  /** Where the card was pointing when the pointer left — the start of that
+   *  blend. Without it the drift's own phase is the start, and it is nowhere near
+   *  where you were. */
+  let handoff = { x: 0, y: 0 };
+  /** The same blend on the way IN. The pointer arrives somewhere far from
+   *  wherever the card had drifted to, so taking it as the target immediately is
+   *  a jump of most of the card's travel in one frame — the follower then covers
+   *  16% of that gap per frame, which is the teleport. This eases from the card's
+   *  own pose into the pointer instead. */
+  let grab = 1;
+  let grabFrom = { x: 0, y: 0 };
+  /** The live pointer reading, held so the frame loop can blend toward it rather
+   *  than the handler assigning it straight to the target. */
+  let aim = { x: 0, y: 0 };
+  /** Set once device orientation takes over, so the pointer branches stand down. */
+  let tilting = false;
+
+  const frame = () => {
+    raf = 0;
+
+    if (!touched) {
+      // Two incommensurate rates, so the resting drift never visibly repeats.
+      idle += 0.0042;
+      const drift = { x: Math.sin(idle) * 0.28, y: Math.cos(idle * 0.73) * 0.2 };
+      // EASE BACK INTO THE DRIFT, do not cut to it.
+      //
+      // The drift's phase keeps advancing while you are hovering, so at the moment
+      // you leave it is somewhere unrelated to where the card is pointing. Handing
+      // the target straight over teleports it, and the follower then races to catch
+      // up — which is the snap.
+      //
+      // `release` ramps 0 -> 1 over about a second after the pointer goes, so the
+      // target travels from where you left it to where the drift wants it rather
+      // than jumping. Squared so it leaves gently and arrives with a little more
+      // pace, which reads as the card relaxing rather than being pulled.
+      release = Math.min(1, release + 0.016);
+      const k = release * release;
+      tilt.target = {
+        x: handoff.x + (drift.x - handoff.x) * k,
+        y: handoff.y + (drift.y - handoff.y) * k,
+      };
+    } else if (!tilting) {
+      // Ease from where the card was into where the pointer is, for about the same
+      // beat as the release. Squared, so it picks the card up gently instead of
+      // snatching it.
+      grab = Math.min(1, grab + 0.018);
+      const k = grab * grab;
+      tilt.target = {
+        x: grabFrom.x + (aim.x - grabFrom.x) * k,
+        y: grabFrom.y + (aim.y - grabFrom.y) * k,
+      };
+    }
+
+    // The release overshoot rides ON TOP of the target rather than replacing it,
+    // so the drift/pointer logic above stays untouched and the bounce simply adds
+    // and decays away.
+    const k = kick.step();
+    if (k.x || k.y) tilt.target = { x: tilt.target.x + k.x, y: tilt.target.y + k.y };
+
+    tilt.step();
+    sheet.target = tilt.value;
+    sheet.step();
+
+    applyFrame(card, tilt.value, sheet.value, foil, live, {
+      speed: sheet.speed,
+      velocity: sheet.velocity,
+      time: (performance.now() - t0) / 1000,
+    });
+
+    // Keep running while the return blend is mid-flight: the followers can be
+    // "settled" against a target that is itself still moving, and stopping there
+    // would freeze the card partway home.
+    if (running && (!touched || release < 1 || grab < 1 || kick.active || !tilt.settled || !sheet.settled)) {
+      raf = requestAnimationFrame(frame);
+    }
+  };
+
+  const wake = () => { if (running && !raf) raf = requestAnimationFrame(frame); };
+
+  const sync = () => {
+    const should = onScreen && !hidden && !reduced;
+    if (should === running) return;
+    running = should;
+    if (should) wake();
+    else if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  };
+
+  const onPointer = (e) => {
+    if (reduced || tilting) return;
+    aim = fromPointer(stage.getBoundingClientRect(), e.clientX, e.clientY);
+    if (!touched) {
+      // FIRST contact: start the pick-up blend from the card's current pose. Only
+      // on the transition — restarting it on every pointermove would permanently
+      // lag the card behind the cursor.
+      touched = true;
+      grabFrom = { x: tilt.value.x, y: tilt.value.y };
+      grab = 0;
+    }
+    // The blend only owns the untouched branch, but resetting it here means a
+    // later leave always starts a fresh return rather than resuming an old one.
+    release = 0;
+    wake();
+  };
+
+  const onLeave = () => {
+    if (tilting) return;
+    touched = false;
+    // Start the blend from the card's CURRENT pose, and restart it from zero so a
+    // quick out-and-back-in never inherits a half-finished return.
+    handoff = { x: tilt.value.x, y: tilt.value.y };
+    release = 0;
+    grab = 1;
+    // Carry past a little on the axis you were pushing. Scaled by the speed at
+    // release, so a flick throws it and setting it down does nothing.
+    kick.fire(tilt.velocity);
+    wake();
+  };
+
+  stage.addEventListener('pointermove', onPointer);
+  stage.addEventListener('pointerleave', onLeave);
+
+  const io = new IntersectionObserver((es) => {
+    onScreen = es.some((e) => e.isIntersecting);
+    sync();
+  }, { rootMargin: '200px' });
+  io.observe(stage);
+
+  document.addEventListener('visibilitychange', () => { hidden = document.hidden; sync(); });
+
+  /* ── DEVICE TILT ──────────────────────────────────────────────────────────
+     iOS needs a gesture before it will deliver orientation events at all, so the
+     opt-in is a real button rather than a silent listener. Android delivers them
+     without asking, so there the button is only a way to hand control over from
+     the pointer. */
+  const orient = new Orientation();
+  const tiltBtn = document.getElementById('tiltBtn');
+  const needsGesture = typeof DeviceOrientationEvent !== 'undefined'
+    && typeof DeviceOrientationEvent.requestPermission === 'function';
+
+  const onOrient = (e) => {
+    if (reduced) return;
+    const v = orient.read(e);
+    if (!v) return;
+    if (!tilting) { tilting = true; status.textContent = 'Tilting with the device. The first reading is zero, so the card answers movement from wherever you were already holding it.'; }
+    touched = true;
+    tilt.target = v;
+    wake();
+  };
+
+  // Desktop Chrome reports DeviceOrientationEvent too, and a tilt button on a
+  // machine that will never emit one is just a dead control — so it also has to
+  // look like a device you can pick up.
+  if ('DeviceOrientationEvent' in window && (needsGesture || window.matchMedia('(pointer: coarse)').matches)) {
+    tiltBtn.hidden = false;
+    tiltBtn.addEventListener('click', async () => {
+      if (needsGesture) {
+        try {
+          const res = await DeviceOrientationEvent.requestPermission();
+          if (res !== 'granted') { status.textContent = 'Motion access was declined, so the card stays on the pointer.'; return; }
+        } catch {
+          status.textContent = 'Motion access is unavailable in this browser, so the card stays on the pointer.';
+          return;
+        }
+      }
+      orient.reset();
+      tilting = false;
+      window.addEventListener('deviceorientation', onOrient);
+      status.textContent = 'Listening for device tilt — move the device to see whether it reports orientation.';
+    });
+  }
+
+  /* ── CONTROLS ─────────────────────────────────────────────────────────── */
+  const swatches = document.getElementById('swatches');
+  const parallaxIn = document.getElementById('parallax');
+  const bloomIn = document.getElementById('bloom');
+  const parallaxOut = document.getElementById('parallaxOut');
+  const bloomOut = document.getElementById('bloomOut');
+
+  const showLive = () => {
+    parallaxIn.value = String(live.parallax);
+    bloomIn.value = String(live.bloom);
+    parallaxOut.textContent = live.parallax.toFixed(2);
+    bloomOut.textContent = live.bloom.toFixed(2);
+  };
+
+  const select = (f) => {
+    foil = f;
+    // A material's own numbers are its identity, so switching resets the sliders
+    // to them rather than carrying the last preset's tuning across.
+    live.parallax = f.parallax;
+    live.bloom = f.bloom;
+    applyFoil(card, foil);
+    showLive();
+    for (const b of swatches.children) b.setAttribute('aria-pressed', String(b.dataset.key === f.key));
+    // Repaint immediately: with the loop parked (settled, or off under reduced
+    // motion) nothing else would write the new material's per-frame values.
+    paintOnce();
+    wake();
+  };
+
+  for (const f of FOILS) {
+    const b = document.createElement('button');
+    b.className = 'swatch';
+    b.type = 'button';
+    b.dataset.key = f.key;
+    b.setAttribute('aria-pressed', String(f === foil));
+    b.innerHTML = `<i style="background:${f.dot}"></i>${f.label}`;
+    b.addEventListener('click', () => select(f));
+    swatches.appendChild(b);
+  }
+
+  const paintOnce = () => {
+    applyFrame(card, tilt.value, sheet.value, foil, live, {
+      speed: sheet.speed, velocity: sheet.velocity, time: (performance.now() - t0) / 1000,
+    });
+  };
+
+  parallaxIn.addEventListener('input', () => {
+    live.parallax = Number(parallaxIn.value);
+    parallaxOut.textContent = live.parallax.toFixed(2);
+    paintOnce(); wake();
+  });
+  bloomIn.addEventListener('input', () => {
+    live.bloom = Number(bloomIn.value);
+    bloomOut.textContent = live.bloom.toFixed(2);
+    paintOnce(); wake();
+  });
+  document.getElementById('resetBtn').addEventListener('click', () => select(foil));
+
+  showLive();
+
+  if (reduced) {
+    // Reduced motion: no loop at all, so this one frame is the whole card. The
+    // pose is chosen to sit PAST both thresholds — far enough out that the hearts
+    // are up and the tile is part-flipped — because a pose inside them shows a
+    // plain pink rectangle and none of what the card does.
+    //
+    // And deliberately on the diagonal OPPOSITE the sweet spot: parked on the
+    // spot every layer saturates at once and the frame is a white blowout, which
+    // hides the hearts it was chosen to show.
+    tilt.value = { x: 0.48, y: 0.44 };
+    sheet.value = { x: 0.48, y: 0.44 };
+    paintOnce();
+    status.textContent = 'Reduced motion is on, so the card is held at a fixed angle instead of following the pointer.';
+  } else {
+    paintOnce();
+    sync();
+  }
+})();
+</script>
+
+</body>
+</html>
