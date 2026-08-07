@@ -19,8 +19,8 @@ up on the side you turned toward, and the photo tile flips its two inks.
 
 It is a port of the React/TypeScript component tree (`holo/engine.ts`,
 `holo/HoloCard.tsx`) to one dependency-free page — the maths is unchanged, and the
-ten foil materials are the same data. Its portrait is a drawn placeholder; drop a
-file at `holo/kamila.webp` and the page picks it up on load.
+ten foil materials are the same data. Its photo slot holds an empty plate until
+you drop a file at `holo/kamila.webp`, which the page picks up on load.
 
 ## Hosting
 

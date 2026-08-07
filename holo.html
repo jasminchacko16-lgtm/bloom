@@ -386,7 +386,7 @@
 </div>
 
 <p class="footnote">
-  The portrait is a drawn placeholder — drop a file at <code>holo/kamila.webp</code> and the card picks it up automatically on load.
+  The photo slot is empty — drop a file at <code>holo/kamila.webp</code> and the card picks it up automatically on load.
   Ported from the React component tree (<code>holo/engine.ts</code>, <code>holo/HoloCard.tsx</code>) to one dependency-free page; the maths is the same, and the layer stack that was in the original stylesheet is authored here from the variable contract the engine writes.
 </p>
 
@@ -463,27 +463,40 @@ const HEARTS = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="100" heigh
     .map(([x,y,s,r,o]) => `<path opacity="${o}" transform="translate(${x} ${y}) rotate(${r}) scale(${s*0.5}) translate(-12 -12)" d="M12 21C5.5 15.5 2 11.8 2 8.2 2 5.3 4.3 3 7.2 3 9 3 10.7 3.9 12 5.4 13.3 3.9 15 3 16.8 3 19.7 3 22 5.3 22 8.2 22 11.8 18.5 15.5 12 21Z"/>`).join('')}
 </svg>`);
 
-/** The portrait placeholder. Kept abstract on purpose — it exists so the
- *  duotone and the flip have a real luminance range to work on until a
- *  photograph is dropped in. */
-const PORTRAIT = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="380" viewBox="0 0 300 380">
+/**
+ * THE EMPTY PHOTO PLATE.
+ *
+ * Deliberately NOT a person. The card names a real one, and a drawn face in her
+ * slot is a wrong likeness of her rather than a stand-in for one — so this is an
+ * abstract plate that reads as an empty frame waiting for a file.
+ *
+ * It still has to carry a full luminance range from near-white to near-black,
+ * because that range is the only thing the duotone and the flip have to work
+ * on: the two inks clamp the light and dark ends, so a flat placeholder would
+ * make both effects look broken rather than subtle.
+ */
+/* 300x618 is the TILE's own aspect, and it has to be. The tile paints this with
+   `cover`, so a plate at any other ratio has its edges cropped and the frame
+   disappears off whichever axis overflows. The ratio is fixed and derivable: the
+   card is 1.55:1, the tile is 27% of its width and (100 - 2*7)% of its height, so
+   0.27 / (0.86 / 1.55) = 0.486.
+   The soft shapes are radial-gradient FILLS rather than a blur filter, because a
+   filter on a scaled group blurs in pre-transform units and clips to the filter
+   region — which turned the mark into a grey square. */
+const PLACEHOLDER = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="618" viewBox="0 0 300 618">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4eeeb"/><stop offset="1" stop-color="#b2a6ab"/></linearGradient>
-    <radialGradient id="lit" cx=".36" cy=".28" r=".72"><stop offset="0" stop-color="#ffffff" stop-opacity=".8"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
-    <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#372c32"/><stop offset="1" stop-color="#6b5860"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2=".72" y2="1"><stop offset="0" stop-color="#fcf8f6"/><stop offset=".5" stop-color="#cabec4"/><stop offset="1" stop-color="#443942"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#ffffff" stop-opacity=".55"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="shade"><stop offset="0" stop-color="#211b20" stop-opacity=".45"/><stop offset="1" stop-color="#211b20" stop-opacity="0"/></radialGradient>
   </defs>
-  <rect width="300" height="380" fill="url(#bg)"/>
-  <rect width="300" height="380" fill="url(#lit)"/>
-  <path d="M34 380C46 298 98 266 150 266s104 32 116 114Z" fill="#8a7b83"/>
-  <rect x="131" y="210" width="38" height="72" rx="17" fill="#c9b2ac"/>
-  <ellipse cx="150" cy="150" rx="62" ry="75" fill="#e4cfc7"/>
-  <path d="M88 152c-6-60 22-90 62-90s68 30 62 90c0-33-22-51-62-51s-62 18-62 51Z" fill="url(#hair)"/>
-  <path d="M86 148c-12 48-8 88 6 114-6-52 0-86 8-108Z" fill="url(#hair)"/>
-  <path d="M214 148c12 48 8 88-6 114 6-52 0-86-8-108Z" fill="url(#hair)"/>
-  <ellipse cx="128" cy="150" rx="6.5" ry="4.2" fill="#5b4850" opacity=".55"/>
-  <ellipse cx="172" cy="150" rx="6.5" ry="4.2" fill="#5b4850" opacity=".55"/>
-  <path d="M135 186q15 11 30 0" stroke="#a5767d" stroke-width="5" fill="none" stroke-linecap="round" opacity=".7"/>
-  <ellipse cx="119" cy="119" rx="26" ry="35" fill="#ffffff" opacity=".16"/>
+  <rect width="300" height="618" fill="url(#bg)"/>
+  <circle cx="70" cy="486" r="184" fill="url(#glow)"/>
+  <circle cx="248" cy="134" r="164" fill="url(#shade)"/>
+  <g transform="translate(150 300) scale(5.6) translate(-12 -12)">
+    <path fill="none" stroke="#2f2830" stroke-opacity=".38" stroke-width="1.5" stroke-linejoin="round"
+          d="M12 21C5.5 15.5 2 11.8 2 8.2 2 5.3 4.3 3 7.2 3 9 3 10.7 3.9 12 5.4 13.3 3.9 15 3 16.8 3 19.7 3 22 5.3 22 8.2 22 11.8 18.5 15.5 12 21Z"/>
+  </g>
+  <rect x="20" y="20" width="260" height="578" rx="11" fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width="2.5" stroke-dasharray="14 12"/>
 </svg>`);
 
 /** Where a real photograph goes, if one is there. */
@@ -1137,9 +1150,9 @@ function applyFrame(card, tilt, sheet, foil, live, motion = {}) {
   const live = { parallax: foil.parallax, bloom: foil.bloom };
 
   /* If a real photograph is sitting at holo/kamila.webp, use it; otherwise the
-     drawn placeholder stands in. Probing rather than assuming keeps the page
-     working as a self-contained file with no assets beside it. */
-  card.style.setProperty('--tile-src', PORTRAIT);
+     empty plate stands in. Probing rather than assuming keeps the page working as
+     a self-contained file with no assets beside it. */
+  card.style.setProperty('--tile-src', PLACEHOLDER);
   const probe = new Image();
   probe.onload = () => card.style.setProperty('--tile-src', `url("${TILE_PHOTO}")`);
   probe.src = TILE_PHOTO;
